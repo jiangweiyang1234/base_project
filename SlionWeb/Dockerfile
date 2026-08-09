@@ -33,8 +33,11 @@ COPY . .
 # 仅覆盖构建期需要的非密钥变量；密钥以仓库内 .env.local 为准
 ARG VUE_APP_BASE_URL=/prod-api
 ARG VUE_APP_CLIENT_ID=e5cd7e4891bf95d1d19206ce24a7b32e
+ARG VUE_APP_RSA_PUBLIC_KEY=
 ENV VUE_APP_BASE_URL=${VUE_APP_BASE_URL} \
     VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID} \
+    VUE_APP_ENCRYPT=true \
+    VUE_APP_RSA_PUBLIC_KEY=${VUE_APP_RSA_PUBLIC_KEY} \
     NODE_OPTIONS=--max_old_space_size=4096
 
 # 持久化 Webpack filesystem cache：源码小改时二次构建可明显低于 100s

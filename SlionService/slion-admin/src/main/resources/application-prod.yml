@@ -35,10 +35,12 @@ springdoc:
   api-docs:
     enabled: false
 
+# 接口传输加密（RSA+AES）。密钥请放 deploy/.env（SLION_API_*），勿写入仓库
+# 前端 loginRSA / VUE_APP_RSA_PUBLIC_KEY 须与公钥一致
 api-decrypt:
-  enabled: true
-  publicKey: ${SLION_API_PUBLIC_KEY}
-  privateKey: ${SLION_API_PRIVATE_KEY}
+  enabled: ${SLION_API_DECRYPT_ENABLED:true}
+  publicKey: ${SLION_API_PUBLIC_KEY:}
+  privateKey: ${SLION_API_PRIVATE_KEY:}
 
 --- # 数据源配置
 spring:

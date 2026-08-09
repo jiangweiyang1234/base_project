@@ -57,7 +57,8 @@
         "vue-qr": "^5.0.3",
         "vue-router": "^5.0.3",
         "vuedraggable": "^4.0.1",
-        "xlsx": "0.18.5"
+        "xlsx": "0.18.5",
+        "crypto-js": "^4.2.0"
     },
     "devDependencies": {
         "@babel/core": "^7.29.0",
@@ -114,7 +115,8 @@
         "vue-global-api": "^0.4.1",
         "vue-unplugins": "^1.0.6",
         "webpack": "^5.105.2",
-        "webpackbar": "^7.0.0"
+        "webpackbar": "^7.0.0",
+        "@types/crypto-js": "^4.2.2"
     },
     "gitHooks": {
         "pre-commit": "lint-staged"

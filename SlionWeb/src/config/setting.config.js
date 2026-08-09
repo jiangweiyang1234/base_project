@@ -41,8 +41,8 @@ module.exports = {
     errorLog: 'development',
     // 是否开启登录拦截
     loginInterception: true,
-    // 是否开启登录RSA加密
-    loginRSA: false,
+    // 是否开启登录接口加密（RSA+AES，与后端 api-decrypt / @ApiEncrypt 对齐）
+    loginRSA: true,
     // intelligence(前端导出路由)和 all(后端导出路由)两种方式
     authentication: 'all',
     // 是否支持游客模式，支持情况下，访问白名单，可查看所有asyncRoutes

@@ -8,6 +8,7 @@ import {
     clientId,
     contentType,
     debounce,
+    loginRSA,
     messageName,
     requestTimeout,
     statusName,
@@ -16,6 +17,7 @@ import {
 import router from '@/router'
 import { isArray } from '@/utils/validate'
 import { refreshToken } from '@/api/refreshToken'
+import { encryptRequestPayload } from '@/utils/apiCrypto'
 
 let loadingInstance: any
 
@@ -62,8 +64,7 @@ const CODE_MESSAGE: any = {
 const requestConf: any = (config: any) => {
     const userStore = useUserStore()
     const { token } = userStore
-    // 不规范写法 可根据setting.config.js tokenName配置随意自定义headers
-    // if (token) config.headers[tokenName] = token
+    config.headers = config.headers || {}
 
     // 规范写法 不可随意自定义
     if (token) config.headers['Authorization'] = `Bearer ${token}`
@@ -76,6 +77,30 @@ const requestConf: any = (config: any) => {
             'application/x-www-form-urlencoded;charset=UTF-8'
     )
         config.data = qs.stringify(config.data)
+
+    // 与后端 @ApiEncrypt / api-decrypt 对齐：RSA 保护 AES 口令，AES 加密 body
+    const needEncrypt =
+        (config.headers.isEncrypt === true ||
+            config.headers.isEncrypt === 'true' ||
+            (loginRSA &&
+                (config.url === '/auth/login' ||
+                    config.url === '/auth/register'))) &&
+        (config.method === 'post' || config.method === 'put') &&
+        config.data != null &&
+        !(config.data instanceof FormData)
+
+    if (needEncrypt) {
+        const { body, encryptKeyHeader, headerName } = encryptRequestPayload(
+            config.data
+        )
+        config.headers[headerName] = encryptKeyHeader
+        // 密文已是字符串，禁止 axios 再 JSON.stringify 包一层引号
+        config.headers['Content-Type'] = 'text/plain;charset=utf-8'
+        config.data = body
+        config.transformRequest = [(d: any) => d]
+        delete config.headers.isEncrypt
+    }
+
     if (debounce.some((item) => config.url.includes(item)))
         loadingInstance = gp.$baseLoading()
     return config

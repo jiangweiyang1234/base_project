@@ -72,6 +72,8 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${SLION_REDIS_PASSWORD:-slion_redis_pass}
       SLION_JWT_SECRET: ${SLION_JWT_SECRET:-CHANGE_ME_JWT_SECRET}
+      # API 请求体加解密（RSA+AES；前端需 loginRSA=true 且公钥一致）
+      SLION_API_DECRYPT_ENABLED: ${SLION_API_DECRYPT_ENABLED:-true}
       SLION_API_PUBLIC_KEY: ${SLION_API_PUBLIC_KEY:-}
       SLION_API_PRIVATE_KEY: ${SLION_API_PRIVATE_KEY:-}
       # OAuth2 开放 API（默认关闭；issuer 与 OpenResty 同域根地址一致）
@@ -94,6 +96,7 @@ services:
         # 授权密钥请放在 SlionWeb/.env.local，勿在此传入 preview（会阻断打包）
         VUE_APP_BASE_URL: ${VUE_APP_BASE_URL:-/prod-api}
         VUE_APP_CLIENT_ID: ${VUE_APP_CLIENT_ID:-e5cd7e4891bf95d1d19206ce24a7b32e}
+        VUE_APP_RSA_PUBLIC_KEY: ${SLION_API_PUBLIC_KEY:-}
     image: slion/slion-web:${IMAGE_TAG:-1.0.0}
     container_name: slion-web
     restart: unless-stopped

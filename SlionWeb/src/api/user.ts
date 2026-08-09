@@ -1,26 +1,21 @@
 import request from '@/utils/request'
-import { encryptedData } from '@/utils/encrypt'
 import { loginRSA } from '@/config'
 
 export async function login(data: any) {
-    if (loginRSA) {
-        data = await encryptedData(data)
-    }
     return request({
         url: '/auth/login',
         method: 'post',
-        data: data,
+        data,
+        headers: loginRSA ? { isEncrypt: 'true' } : undefined,
     })
 }
 
 export async function socialLogin(data: any) {
-    if (loginRSA) {
-        data = await encryptedData(data)
-    }
     return request({
         url: '/socialLogin',
         method: 'post',
         data,
+        headers: loginRSA ? { isEncrypt: 'true' } : undefined,
     })
 }
 
@@ -47,8 +42,9 @@ export function getCapture() {
 
 export function register(data: any) {
     return request({
-        url: '/register',
+        url: '/auth/register',
         method: 'post',
         data,
+        headers: loginRSA ? { isEncrypt: 'true' } : undefined,
     })
 }
