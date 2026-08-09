@@ -60,14 +60,25 @@ if [[ ! -f "$ENV_FILE" ]]; then
   cp .env.example .env
 fi
 
-# shellcheck disable=SC1090
-set -a
-# shellcheck source=/dev/null
-source "$ENV_FILE"
-set +a
+# 勿 source .env（docker-compose 环境文件含空格值时会当命令执行）
+# 仅安全读取展示用端口
+env_get() {
+  local key="$1" default="$2" line value
+  line="$(grep -E "^${key}=" "$ENV_FILE" 2>/dev/null | tail -n1 || true)"
+  if [[ -z "$line" ]]; then
+    printf '%s' "$default"
+    return
+  fi
+  value="${line#*=}"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  printf '%s' "${value:-$default}"
+}
 
-WEB_PORT="${SLION_WEB_HOST_PORT:-80}"
-API_PORT="${SLION_ADMIN_HOST_PORT:-8080}"
+WEB_PORT="$(env_get SLION_WEB_HOST_PORT 80)"
+API_PORT="$(env_get SLION_ADMIN_HOST_PORT 8080)"
 
 # 启用 BuildKit，使 Dockerfile 中 Maven/pnpm cache mount 生效
 export DOCKER_BUILDKIT=1
