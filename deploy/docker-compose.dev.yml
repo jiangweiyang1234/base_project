@@ -22,7 +22,7 @@ services:
     image: docker.1ms.run/redis:8.0
     container_name: slion-dev-redis
     ports:
-      - "6379:6379"
+      - "${SLION_REDIS_HOST_PORT:-26379}:6379"
     command: redis-server --appendonly yes --requirepass ${SLION_REDIS_PASSWORD:-}
     networks:
       - slion-service-net

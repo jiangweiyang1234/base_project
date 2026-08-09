@@ -38,7 +38,7 @@ services:
       redis-server --appendonly yes
       --requirepass ${SLION_REDIS_PASSWORD:-slion_redis_pass}
     ports:
-      - "${SLION_REDIS_HOST_PORT:-6379}:6379"
+      - "${SLION_REDIS_HOST_PORT:-26379}:6379"
     volumes:
       - slion-redis-data:/data
     healthcheck:
