@@ -121,8 +121,8 @@ security:
 
 # 多租户配置
 tenant:
-  # 是否开启（默认关闭，按项目需要开启）
-  enable: false
+  # 是否开启（可用环境变量 TENANT_ENABLED 覆盖；开启后才会注册 /system/tenant 等接口）
+  enable: ${TENANT_ENABLED:true}
   # 排除表（关联表通常无 tenant_id）
   excludes:
     - sys_menu
@@ -237,7 +237,8 @@ websocket:
 
 --- # warm-flow工作流配置
 warm-flow:
-  enabled: false
+  # 是否开启（可用环境变量 WARM_FLOW_ENABLED 覆盖；开启后才会注册 /workflow/** 接口）
+  enabled: ${WARM_FLOW_ENABLED:true}
   ui: true
   top-text-show: true
   node-tooltip: true
