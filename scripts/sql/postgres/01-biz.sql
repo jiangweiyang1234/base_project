@@ -572,6 +572,9 @@ INSERT INTO sys_menu VALUES('1509', '测试树表修改', '1506', '3', '#', '', 
 INSERT INTO sys_menu VALUES('1510', '测试树表删除', '1506', '4', '#', '', '',  '1', '0', 'F', '0', '0', 'demo:tree:remove',                 '#', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES('1511', '测试树表导出', '1506', '5', '#', '', '',  '1', '0', 'F', '0', '0', 'demo:tree:export',                 '#', 103, 1, now(), NULL, NULL, '');
 
+-- 与实体 SysMenu.showName 对齐（放在初始化数据之后，避免 positional insert 列数变化）
+ALTER TABLE sys_menu ADD COLUMN IF NOT EXISTS show_name varchar(50) DEFAULT NULL;
+COMMENT ON COLUMN sys_menu.show_name IS '显示菜单名称';
 
 -- ----------------------------
 -- 6、用户和角色关联表  用户N-1角色

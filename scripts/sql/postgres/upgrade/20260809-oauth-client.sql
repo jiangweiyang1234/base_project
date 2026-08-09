@@ -41,17 +41,23 @@ CREATE TABLE IF NOT EXISTS oauth2_registered_client (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_oauth2_client_id ON oauth2_registered_client (client_id);
 
-insert into sys_menu values('1700', '开放应用',     '1',    '12', 'oauthClient', 'system/oauthClient/index', '', '1', '0', 'C', '0', '0', 'system:oauthClient:list',   'validCode', 103, 1, now(), null, null, 'OAuth2 开放应用（AppKey/AppSecret）')
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query_param, is_frame, is_cache, menu_type, visible, status, perms, icon, create_dept, create_by, create_time, update_by, update_time, remark)
+values('1700', '开放应用',     '1',    '12', 'oauthClient', 'system/oauthClient/index', '', '1', '0', 'C', '0', '0', 'system:oauthClient:list',   'validCode', 103, 1, now(), null, null, 'OAuth2 开放应用（AppKey/AppSecret）')
 on conflict (menu_id) do nothing;
-insert into sys_menu values('1701', '开放应用查询', '1700', '1',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:query',  '#', 103, 1, now(), null, null, '')
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query_param, is_frame, is_cache, menu_type, visible, status, perms, icon, create_dept, create_by, create_time, update_by, update_time, remark)
+values('1701', '开放应用查询', '1700', '1',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:query',  '#', 103, 1, now(), null, null, '')
 on conflict (menu_id) do nothing;
-insert into sys_menu values('1702', '开放应用新增', '1700', '2',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:add',    '#', 103, 1, now(), null, null, '')
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query_param, is_frame, is_cache, menu_type, visible, status, perms, icon, create_dept, create_by, create_time, update_by, update_time, remark)
+values('1702', '开放应用新增', '1700', '2',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:add',    '#', 103, 1, now(), null, null, '')
 on conflict (menu_id) do nothing;
-insert into sys_menu values('1703', '开放应用修改', '1700', '3',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:edit',   '#', 103, 1, now(), null, null, '')
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query_param, is_frame, is_cache, menu_type, visible, status, perms, icon, create_dept, create_by, create_time, update_by, update_time, remark)
+values('1703', '开放应用修改', '1700', '3',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:edit',   '#', 103, 1, now(), null, null, '')
 on conflict (menu_id) do nothing;
-insert into sys_menu values('1704', '开放应用删除', '1700', '4',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:remove', '#', 103, 1, now(), null, null, '')
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query_param, is_frame, is_cache, menu_type, visible, status, perms, icon, create_dept, create_by, create_time, update_by, update_time, remark)
+values('1704', '开放应用删除', '1700', '4',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:remove', '#', 103, 1, now(), null, null, '')
 on conflict (menu_id) do nothing;
-insert into sys_menu values('1705', '开放应用导出', '1700', '5',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:export', '#', 103, 1, now(), null, null, '')
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query_param, is_frame, is_cache, menu_type, visible, status, perms, icon, create_dept, create_by, create_time, update_by, update_time, remark)
+values('1705', '开放应用导出', '1700', '5',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:export', '#', 103, 1, now(), null, null, '')
 on conflict (menu_id) do nothing;
 
 insert into sys_role_menu values ('3', '1700') on conflict do nothing;
