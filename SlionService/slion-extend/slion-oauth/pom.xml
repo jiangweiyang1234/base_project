@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>net.slion</groupId>
+        <artifactId>slion-extend</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>slion-oauth</artifactId>
+    <description>OAuth2 授权服务（对外开放 open-api，与 Sa-Token 双轨并存）</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

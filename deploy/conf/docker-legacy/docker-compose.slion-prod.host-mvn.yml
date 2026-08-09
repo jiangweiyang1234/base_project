@@ -1,0 +1,14 @@
+# Compose 覆盖：使用宿主机 Maven 编译 jar，镜像仅打包运行时（Dockerfile.runtime）
+#
+# 用法（在 scripts/docker 目录）：
+#   cd ../.. && mvn clean package -Pprod -DskipTests -pl slion-admin -am && cd scripts/docker
+#   docker compose --env-file .env.slion-prod \
+#     -f docker-compose.slion-prod.yml \
+#     -f docker-compose.slion-prod.host-mvn.yml \
+#     up -d --build
+
+services:
+  slion-admin:
+    build:
+      context: ../../slion-admin
+      dockerfile: Dockerfile.runtime

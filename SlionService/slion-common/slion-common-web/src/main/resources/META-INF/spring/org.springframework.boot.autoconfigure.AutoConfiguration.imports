@@ -1,0 +1,5 @@
+net.slion.common.web.config.CaptchaConfig
+net.slion.common.web.config.FilterConfig
+net.slion.common.web.config.I18nConfig
+net.slion.common.web.config.ResourcesConfig
+net.slion.common.web.config.UndertowConfig

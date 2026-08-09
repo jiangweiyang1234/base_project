@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <groupId>net.slion</groupId>
+        <artifactId>slion-service</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>slion-admin</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-doc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-social</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-ratelimiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-system</artifactId>
+        </dependency>
+        <!-- 业务模块：设备/项目等 Controller、Kafka 监听器等 -->
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-kafka</artifactId>
+        </dependency>
+        <!-- 可选扩展：工作流 / OAuth2 / Disruptor（运行时再通过 *.enabled 开关） -->
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-workflow</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-oauth</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-disruptor</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <!--
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-generator</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven-jar-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>${maven-war-plugin.version}</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <warName>${project.artifactId}</warName>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
+</project>

@@ -1,0 +1,165 @@
+# Slion 生产独立栈：postgres + redis + kafka + slion-admin
+# 与宿主机上已有 postgres/redis/kafka 隔离，使用独立网络 slion-prod-net (10.0.7.0/24)
+#
+# 一键构建并启动（在 scripts/docker 目录）：
+#
+# 【方式 A】容器内 Maven 编译（默认，不占用本机 Maven）：
+#   docker compose --env-file .env.slion-prod -f docker-compose.slion-prod.yml up -d --build
+#
+# 【方式 B】本机 Maven 编译 + Docker 只打运行时镜像：
+#   cd ../.. && mvn clean package -Pprod -DskipTests -pl slion-admin -am && cd scripts/docker
+#   docker compose --env-file .env.slion-prod \
+#     -f docker-compose.slion-prod.yml -f docker-compose.slion-prod.host-mvn.yml up -d --build
+#
+# 初始化数据库（首次部署，Postgres 就绪后执行一次）：
+#   docker exec -i slion-prod-postgres psql -U postgres -d slion < ../../scripts/sql/slion.sql
+#
+# Kafka 数据目录（bind mount 时二选一）：
+#   方式 1（推荐）：compose 已设置 user: "0:0"，sudo mkdir 即可
+#     sudo mkdir -p /docker/slion-prod/kafka/data
+#   方式 2：非 root 运行，需将目录属主改为 UID 1000
+#     sudo mkdir -p /docker/slion-prod/kafka/data && sudo chown -R 1000:1000 /docker/slion-prod/kafka/data
+
+services:
+
+  postgres:
+    image: docker.1ms.run/postgres:15.15
+    container_name: slion-prod-postgres
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      POSTGRES_USER: ${SLION_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${SLION_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${SLION_DB_NAME:-slion}
+    ports:
+      # 宿主机端口与已有 5432 错开，仅本栈使用
+      - "${SLION_PG_HOST_PORT:-15432}:5432"
+    volumes:
+      - ${SLION_DATA_ROOT:-/docker/slion-prod}/postgres/data:/var/lib/postgresql/data
+      # 可选：首次建库自动执行 SQL（将 slion.sql 放到该目录并命名为 01-init.sql）
+      - ${SLION_DATA_ROOT:-/docker/slion-prod}/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SLION_DB_USER:-postgres} -d ${SLION_DB_NAME:-slion}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      slion-prod-net:
+        ipv4_address: 10.0.7.10
+
+  redis:
+    image: docker.1ms.run/redis:8.4
+    container_name: slion-prod-redis
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${SLION_REDIS_PASSWORD:-slion_redis_pass}
+    ports:
+      # 宿主机端口与已有 6379 错开
+      - "${SLION_REDIS_HOST_PORT:-16379}:6379"
+    volumes:
+      - ${SLION_DATA_ROOT:-/docker/slion-prod}/redis/data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${SLION_REDIS_PASSWORD:-slion_redis_pass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      slion-prod-net:
+        ipv4_address: 10.0.7.11
+
+  kafka:
+    image: docker.1ms.run/apache/kafka:latest
+    container_name: slion-prod-kafka
+    restart: unless-stopped
+    # apache/kafka 默认以 UID 1000 运行；bind mount 宿主机目录多为 root 属主，会导致 meta.properties 写入 AccessDenied
+    user: "0:0"
+    environment:
+      TZ: Asia/Shanghai
+      # KRaft 单节点（无需 Zookeeper），配置参考 apache/kafka 官方镜像
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    ports:
+      - "${SLION_KAFKA_HOST_PORT:-19092}:9092"
+    volumes:
+      - ${SLION_DATA_ROOT:-/docker/slion-prod}/kafka/data:/var/lib/kafka/data
+    healthcheck:
+      # apache/kafka 脚本位于 /opt/kafka/bin/，使用 broker API 探测（KRaft 模式适用）
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092 >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 15s
+      retries: 10
+      start_period: 90s
+    networks:
+      slion-prod-net:
+        ipv4_address: 10.0.7.12
+
+  slion-admin:
+    build:
+      context: ../..
+      dockerfile: slion-admin/Dockerfile
+    image: ${SLION_ADMIN_IMAGE:-slion/slion-admin:1.0.0}
+    container_name: slion-prod-admin
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: prod
+      # PostgreSQL（容器内通过服务名 postgres 访问，走 10.0.7.0/24 内网）
+      SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: jdbc:postgresql://postgres:5432/${SLION_DB_NAME:-slion}?useUnicode=true&characterEncoding=utf8&useSSL=false&reWriteBatchedInserts=true
+      SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: ${SLION_DB_USER:-postgres}
+      SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: ${SLION_DB_PASSWORD:-postgres}
+      # Redis
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${SLION_REDIS_PASSWORD:-slion_redis_pass}
+      SPRING_DATA_REDIS_DATABASE: 0
+      # Kafka（容器内通过服务名 kafka:9092 访问）
+      KAFKA_ENABLED: "true"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_CLIENT_ID: slion-service
+      KAFKA_CONSUMER_GROUP_ID: ${SLION_KAFKA_GROUP_ID:-slion-group}
+      SPRING_BOOT_ADMIN_CLIENT_ENABLED: "false"
+      SNAIL_JOB_ENABLED: "false"
+      JAVA_OPTS: ${SLION_JAVA_OPTS:--Xms512m -Xmx1024m}
+    ports:
+      - "${SLION_HTTP_HOST_PORT:-8088}:8080"
+      - "${SLION_GATEWAY_HOST_PORT:-19031}:9031"
+    volumes:
+      - ${SLION_DATA_ROOT:-/docker/slion-prod}/admin/logs:/slion/server/logs
+      - ${SLION_DATA_ROOT:-/docker/slion-prod}/admin/temp:/slion/server/temp
+    networks:
+      slion-prod-net:
+        ipv4_address: 10.0.7.20
+
+networks:
+  slion-prod-net:
+    name: slion-prod-net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.7.0/24
+          gateway: 10.0.7.1

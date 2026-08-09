@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <groupId>net.slion</groupId>
+        <artifactId>slion-service</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <modules>
+        <module>slion-common-bom</module>
+        <module>slion-common-core</module>
+        <module>slion-common-doc</module>
+        <module>slion-common-encrypt</module>
+        <module>slion-common-excel</module>
+        <module>slion-common-json</module>
+        <module>slion-common-kafka</module>
+        <module>slion-common-redis</module>
+        <module>slion-common-idempotent</module>
+        <module>slion-common-job</module>
+        <module>slion-common-log</module>
+        <module>slion-common-satoken</module>
+        <module>slion-common-mail</module>
+        <module>slion-common-mybatis</module>
+        <module>slion-common-oss</module>
+        <module>slion-common-ratelimiter</module>
+        <module>slion-common-security</module>
+        <module>slion-common-sensitive</module>
+        <module>slion-common-sms</module>
+        <module>slion-common-social</module>
+        <module>slion-common-sse</module>
+        <module>slion-common-tenant</module>
+        <module>slion-common-translation</module>
+        <module>slion-common-web</module>
+        <module>slion-common-websocket</module>
+    </modules>
+
+    <artifactId>slion-common</artifactId>
+    <packaging>pom</packaging>
+
+</project>

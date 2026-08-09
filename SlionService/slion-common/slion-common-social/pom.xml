@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>net.slion</groupId>
+        <artifactId>slion-common</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>slion-common-social</artifactId>
+
+    <description>
+        slion-common-social 授权认证
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>me.zhyd.oauth</groupId>
+            <artifactId>JustAuth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-redis</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

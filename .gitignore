@@ -1,0 +1,33 @@
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Logs & temp
+*.log
+*.log.gz
+logs/
+tmp/
+temp/
+
+# Env secrets (keep *.example)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Java / Maven
+**/target/
+**/.flattened-pom.xml
+
+# Frontend
+**/node_modules/
+**/dist/
+**/.cache/
+
+# Local runtime
+**/logs/
+SlionService/logs/

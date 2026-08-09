@@ -1,0 +1,37 @@
+# 运行时镜像：使用宿主机 Maven 预先编译好的 jar（不执行容器内 mvn）
+#
+# 前置步骤（在项目根目录，使用本机 Maven）：
+#   mvn clean package -Pprod -DskipTests -pl slion-admin -am
+#
+# 构建镜像：
+#   docker build -f slion-admin/Dockerfile.runtime -t slion/slion-admin:1.0.0 slion-admin/
+#
+# 或通过 compose 覆盖文件（见 docker-compose.slion-prod.host-mvn.yml）
+
+FROM bellsoft/liberica-openjdk-rocky:17.0.16-cds
+
+LABEL maintainer="Slion" \
+      org.opencontainers.image.title="slion-admin"
+
+RUN mkdir -p /slion/server/logs /slion/server/temp
+
+WORKDIR /slion/server
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=Asia/Shanghai \
+    JAVA_OPTS="" \
+    SPRING_PROFILES_ACTIVE=prod \
+    SERVER_PORT=8080 \
+    SPRING_SERVLET_MULTIPART_LOCATION=/slion/server/temp
+
+EXPOSE 8080
+EXPOSE 9031
+
+COPY target/slion-admin.jar ./app.jar
+
+SHELL ["/bin/bash", "-c"]
+
+ENTRYPOINT java -Djava.security.egd=file:/dev/./urandom \
+           -XX:+HeapDumpOnOutOfMemoryError -XX:+UseZGC ${JAVA_OPTS} \
+           -jar app.jar

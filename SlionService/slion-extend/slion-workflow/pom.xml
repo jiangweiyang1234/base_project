@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <groupId>net.slion</groupId>
+        <artifactId>slion-extend</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>slion-workflow</artifactId>
+    <packaging>jar</packaging>
+
+    <description>
+        slion-workflow 工作流模块
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-sse</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-doc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-sms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-idempotent</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-excel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-translation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-tenant</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dromara.warm</groupId>
+            <artifactId>warm-flow-mybatis-plus-sb3-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dromara.warm</groupId>
+            <artifactId>warm-flow-plugin-ui-sb-web</artifactId>
+        </dependency>
+    </dependencies>
+</project>

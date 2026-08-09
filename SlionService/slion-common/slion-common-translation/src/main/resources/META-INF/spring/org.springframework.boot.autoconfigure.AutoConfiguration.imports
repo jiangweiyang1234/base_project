@@ -1,0 +1,6 @@
+net.slion.common.translation.config.TranslationConfig
+net.slion.common.translation.core.impl.DeptNameTranslationImpl
+net.slion.common.translation.core.impl.DictTypeTranslationImpl
+net.slion.common.translation.core.impl.OssUrlTranslationImpl
+net.slion.common.translation.core.impl.UserNameTranslationImpl
+net.slion.common.translation.core.impl.NicknameTranslationImpl

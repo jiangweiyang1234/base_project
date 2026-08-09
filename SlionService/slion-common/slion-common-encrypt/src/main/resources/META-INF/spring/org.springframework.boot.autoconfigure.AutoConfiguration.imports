@@ -1,0 +1,3 @@
+net.slion.common.encrypt.config.EncryptorAutoConfiguration
+net.slion.common.encrypt.config.ApiDecryptAutoConfiguration
+

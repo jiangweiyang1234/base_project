@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.slion</groupId>
+    <artifactId>slion-common-bom</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <revision>1.0.0</revision>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- 核心模块 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- 接口模块 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-doc</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- 数据库加解密模块 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-encrypt</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- 序列化模块 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-json</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- excel -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-excel</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- redis -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-redis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- kafka -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-kafka</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- 幂等功能-->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-idempotent</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- 定时任务Job -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-job</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- 日志服务Log -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-log</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- SAToken服务-->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-satoken</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- 邮件服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-mail</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- MyBatis服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-mybatis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- OSS服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-oss</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- RateLimiter 限流服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-ratelimiter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- Security 安全服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-security</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- sensitive 脱敏服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-sensitive</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- SMS短信服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-sms</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- social 授权认证-->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-social</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- sse 模块 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-sse</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- Tenant 租户模块 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-tenant</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- translation通用翻译模块 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-translation</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- Web服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- Websocket服务 -->
+            <dependency>
+                <groupId>net.slion</groupId>
+                <artifactId>slion-common-websocket</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
+</project>

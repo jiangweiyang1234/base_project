@@ -1,0 +1,17 @@
+# Git / IDE
+.git
+.gitignore
+**/.idea
+**/.vscode
+**/*.iml
+
+# 构建产物（镜像内重新编译）
+**/target
+
+# 文档与本地脚本（非运行时所需）
+**/*.md
+!slion-modules/**/mapper/package-info.md
+
+# 测试与 CI
+**/.github
+**/agent-transcripts
