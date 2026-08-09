@@ -32,7 +32,9 @@ public class AppSecurityPassthroughConfiguration {
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             .logout(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // 默认 DENY 会阻断同域 iframe（Warm-Flow 设计器）；SAMEORIGIN 仅允许本站嵌入
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
 }

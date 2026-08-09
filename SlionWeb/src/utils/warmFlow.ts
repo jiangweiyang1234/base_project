@@ -40,5 +40,6 @@ export function buildWarmFlowDesignerUrl(definitionId?: string | number) {
     const hash = definitionId
         ? `#/design?id=${encodeURIComponent(String(definitionId))}`
         : '#/'
-    return `/warm-flow-ui/${qs ? `?${qs}` : ''}${hash}`
+    // 必须指向 index.html：目录 /warm-flow-ui/ 在后端会落到异常 JSON，而非设计器页面
+    return `/warm-flow-ui/index.html${qs ? `?${qs}` : ''}${hash}`
 }
