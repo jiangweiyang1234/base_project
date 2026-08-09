@@ -84,7 +84,7 @@ services:
       context: ../SlionWeb
       dockerfile: Dockerfile
       args:
-        VUE_APP_SECRET_KEY: ${VUE_APP_SECRET_KEY:-preview}
+        # 授权密钥请放在 SlionWeb/.env.local，勿在此传入 preview（会阻断打包）
         VUE_APP_BASE_URL: ${VUE_APP_BASE_URL:-/prod-api}
         VUE_APP_CLIENT_ID: ${VUE_APP_CLIENT_ID:-e5cd7e4891bf95d1d19206ce24a7b32e}
     image: slion/slion-web:${IMAGE_TAG:-1.0.0}

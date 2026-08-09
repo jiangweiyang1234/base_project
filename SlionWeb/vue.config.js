@@ -140,7 +140,8 @@ module.exports = defineConfig({
                     '检测到您的用户名或key未配置，key在购买时通过邮件邀请函发放，如您已购买请仔细阅读文档并进行配置，配置完成后方可打包使用。购买地址：https://vuejs-core.cn/authorization'
                 )}\n`
             )
-            process.exit()
+            // 必须非 0，否则 Docker 会认为构建成功但 dist 不存在
+            process.exit(1)
         }
 
         // 优化构建速度
