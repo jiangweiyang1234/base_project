@@ -13,11 +13,13 @@ logs/
 tmp/
 temp/
 
-# Env secrets (keep *.example)
+# Env secrets（deploy/.env 等仍忽略；SlionWeb Vue CLI 环境文件需要入库）
 .env
 .env.*
 !.env.example
 !**/.env.example
+!SlionWeb/.env
+!SlionWeb/.env.*
 
 # Java / Maven
 **/target/
