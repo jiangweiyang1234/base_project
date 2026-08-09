@@ -1,6 +1,6 @@
--- OAuth2 开放应用（AppKey / AppSecret）
--- 管理后台 Sa-Token 与 open-api OAuth2 双轨并存
--- 正式客户端请在管理台「开放应用」维护；oauth2_registered_client 为 SAS 标准表（预留）
+-- 已有 Postgres 环境升级脚本（可重复执行）
+-- 用法示例：
+--   docker exec -i slion-service-postgres psql -U postgres -d slion < scripts/sql/postgres/upgrade/20260809-oauth-client.sql
 
 CREATE TABLE IF NOT EXISTS slion_oauth_client (
     id               int8          NOT NULL,
@@ -23,17 +23,6 @@ CREATE TABLE IF NOT EXISTS slion_oauth_client (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_slion_oauth_app_key ON slion_oauth_client (app_key);
 
-COMMENT ON TABLE  slion_oauth_client IS 'OAuth2 开放应用（AppKey/AppSecret）';
-COMMENT ON COLUMN slion_oauth_client.app_name IS '应用名称';
-COMMENT ON COLUMN slion_oauth_client.app_key IS 'AppKey（OAuth2 client_id）';
-COMMENT ON COLUMN slion_oauth_client.app_secret IS 'AppSecret（加密存储）';
-COMMENT ON COLUMN slion_oauth_client.grant_types IS '授权类型，逗号分隔';
-COMMENT ON COLUMN slion_oauth_client.scopes IS '授权范围，逗号分隔';
-COMMENT ON COLUMN slion_oauth_client.access_token_ttl IS '访问令牌有效期（秒）';
-COMMENT ON COLUMN slion_oauth_client.status IS '状态（0正常 1停用）';
-COMMENT ON COLUMN slion_oauth_client.del_flag IS '删除标志（0存在 1删除）';
-
--- Spring Authorization Server 标准表（预留，当前运行时读 slion_oauth_client）
 CREATE TABLE IF NOT EXISTS oauth2_registered_client (
     id                            varchar(100)  NOT NULL PRIMARY KEY,
     client_id                     varchar(100)  NOT NULL,
@@ -52,9 +41,6 @@ CREATE TABLE IF NOT EXISTS oauth2_registered_client (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_oauth2_client_id ON oauth2_registered_client (client_id);
 
-COMMENT ON TABLE oauth2_registered_client IS 'OAuth2 注册客户端（SAS 标准表，预留）';
-
--- 菜单：系统管理 → 开放应用
 insert into sys_menu values('1700', '开放应用',     '1',    '12', 'oauthClient', 'system/oauthClient/index', '', '1', '0', 'C', '0', '0', 'system:oauthClient:list',   'validCode', 103, 1, now(), null, null, 'OAuth2 开放应用（AppKey/AppSecret）')
 on conflict (menu_id) do nothing;
 insert into sys_menu values('1701', '开放应用查询', '1700', '1',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:query',  '#', 103, 1, now(), null, null, '')
@@ -68,7 +54,6 @@ on conflict (menu_id) do nothing;
 insert into sys_menu values('1705', '开放应用导出', '1700', '5',  '#', '', '', '1', '0', 'F', '0', '0', 'system:oauthClient:export', '#', 103, 1, now(), null, null, '')
 on conflict (menu_id) do nothing;
 
--- 演示角色绑定（超级管理员不依赖 role_menu）
 insert into sys_role_menu values ('3', '1700') on conflict do nothing;
 insert into sys_role_menu values ('3', '1701') on conflict do nothing;
 insert into sys_role_menu values ('3', '1702') on conflict do nothing;

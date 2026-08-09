@@ -25,6 +25,26 @@
             <artifactId>slion-common-redis</artifactId>
         </dependency>
         <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-satoken</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-idempotent</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.slion</groupId>
+            <artifactId>slion-common-excel</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>
             <exclusions>

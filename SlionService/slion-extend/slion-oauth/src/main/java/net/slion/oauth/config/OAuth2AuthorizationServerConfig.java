@@ -1,10 +1,16 @@
 package net.slion.oauth.config;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import lombok.extern.slf4j.Slf4j;
+import net.slion.common.core.utils.StringUtils;
+import net.slion.oauth.domain.SlionOauthClient;
+import net.slion.oauth.mapper.SlionOauthClientMapper;
+import net.slion.oauth.repository.DbRegisteredClientRepository;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -14,19 +20,12 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
-import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -35,13 +34,13 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.time.Duration;
 import java.util.UUID;
 
 /**
  * Spring Authorization Server 配置（仅作用于 /oauth2/**、/open-api/**）。
- * 管理后台仍使用 Sa-Token，互不替换。
+ * 客户端从数据库 slion_oauth_client 读取；管理后台仍使用 Sa-Token。
  */
+@Slf4j
 @AutoConfiguration
 @EnableWebSecurity
 @EnableConfigurationProperties(OAuth2Properties.class)
@@ -84,25 +83,11 @@ public class OAuth2AuthorizationServerConfig {
     }
 
     @Bean
-    public RegisteredClientRepository registeredClientRepository(OAuth2Properties properties, PasswordEncoder passwordEncoder) {
-        RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId(properties.getClientId())
-            .clientSecret(passwordEncoder.encode(properties.getClientSecret()))
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
-            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("http://127.0.0.1:8080/login/oauth2/code/slion")
-            .scope(properties.getScope())
-            .scope("openid")
-            .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
-            .tokenSettings(TokenSettings.builder()
-                .accessTokenTimeToLive(Duration.ofHours(2))
-                .refreshTokenTimeToLive(Duration.ofDays(7))
-                .build())
-            .build();
-        return new InMemoryRegisteredClientRepository(client);
+    public RegisteredClientRepository registeredClientRepository(SlionOauthClientMapper mapper,
+                                                                 PasswordEncoder passwordEncoder,
+                                                                 OAuth2Properties properties) {
+        seedDefaultClientIfEmpty(mapper, passwordEncoder, properties);
+        return new DbRegisteredClientRepository(mapper);
     }
 
     @Bean
@@ -129,9 +114,27 @@ public class OAuth2AuthorizationServerConfig {
             .build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    private void seedDefaultClientIfEmpty(SlionOauthClientMapper mapper,
+                                          PasswordEncoder passwordEncoder,
+                                          OAuth2Properties properties) {
+        if (StringUtils.isBlank(properties.getClientId()) || StringUtils.isBlank(properties.getClientSecret())) {
+            return;
+        }
+        Long count = mapper.selectCount(Wrappers.emptyWrapper());
+        if (count != null && count > 0) {
+            return;
+        }
+        SlionOauthClient seed = new SlionOauthClient();
+        seed.setAppName("默认开放应用");
+        seed.setAppKey(properties.getClientId());
+        seed.setAppSecret(passwordEncoder.encode(properties.getClientSecret()));
+        seed.setGrantTypes("client_credentials");
+        seed.setScopes(StringUtils.blankToDefault(properties.getScope(), "open.api"));
+        seed.setAccessTokenTtl(7200);
+        seed.setStatus("0");
+        seed.setRemark("空库自动种子，可在管理台「开放应用」中修改或删除");
+        mapper.insert(seed);
+        log.warn("已写入默认 OAuth 开放应用 AppKey={}，请尽快在管理台维护正式客户端", properties.getClientId());
     }
 
     private static KeyPair generateRsaKey() {

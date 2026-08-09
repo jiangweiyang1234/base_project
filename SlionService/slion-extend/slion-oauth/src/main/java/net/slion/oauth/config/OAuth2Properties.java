@@ -21,17 +21,17 @@ public class OAuth2Properties {
     private String issuer = "http://localhost:8080";
 
     /**
-     * 默认客户端（Client Credentials）
+     * 空库时可选种子 AppKey；正式客户端请在管理台「开放应用」维护
      */
-    private String clientId = "slion-open-api";
+    private String clientId = "";
 
     /**
-     * 默认客户端密钥（生产务必覆盖）
+     * 空库时可选种子 AppSecret
      */
-    private String clientSecret = "CHANGE_ME_OAUTH_CLIENT_SECRET";
+    private String clientSecret = "";
 
     /**
-     * 默认 scope
+     * 默认 scope（种子与默认值）
      */
     private String scope = "open.api";
 }

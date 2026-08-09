@@ -124,6 +124,8 @@ tenant:
     - sys_user_post
     - sys_user_role
     - sys_client
+    - slion_oauth_client
+    - oauth2_registered_client
     - sys_oss_config
     - flow_spel
 
@@ -241,9 +243,11 @@ warm-flow:
 --- # OAuth2 / Disruptor 等扩展能力
 oauth2:
   enabled: ${OAUTH2_ENABLED:false}
+  # 对外访问根地址（与 OpenResty 同域一致，勿带末尾 /）
   issuer: ${OAUTH2_ISSUER:http://localhost:8080}
-  client-id: ${OAUTH2_CLIENT_ID:slion-open-api}
-  client-secret: ${OAUTH2_CLIENT_SECRET:CHANGE_ME_OAUTH_CLIENT_SECRET}
+  # 以下仅在 slion_oauth_client 空表时写入一条种子；正式请用管理台「开放应用」
+  client-id: ${OAUTH2_CLIENT_ID:}
+  client-secret: ${OAUTH2_CLIENT_SECRET:}
   scope: ${OAUTH2_SCOPE:open.api}
 
 disruptor:
