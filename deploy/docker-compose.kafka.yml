@@ -1,6 +1,6 @@
 services:
   kafka:
-    image: apache/kafka:latest
+    image: docker.1ms.run/apache/kafka:4.3.1
     container_name: slion-kafka
     restart: unless-stopped
     environment:

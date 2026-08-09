@@ -1,43 +1,34 @@
 # syntax=docker/dockerfile:1
-# Slion Admin 多阶段构建：容器内 Maven 编译 + JRE 运行
-# 注意：docker compose --build 使用的是镜像内的 Maven，不会调用宿主机已安装的 Maven。
-#
-# 【方式 A】容器内编译（默认，服务器无需本机 Maven）：
-#   docker compose -f scripts/docker/docker-compose.slion-prod.yml build slion-admin
-#
-# 【方式 B】宿主机 Maven 预编译 + 仅打运行时镜像：
-#   mvn clean package -Pprod -DskipTests -pl slion-admin -am
-#   docker compose -f ... -f docker-compose.slion-prod.host-mvn.yml up -d --build
-#
-# 本地单独构建（在项目根目录）：
-#   docker build -f slion-admin/Dockerfile -t slion/slion-admin:1.0.0 .
+# 容器内 Maven 编译 + JRE 运行（无需宿主机安装 Maven）
+# 依赖阿里云仓库：https://maven.aliyun.com/repository/public
+# 需要 BuildKit（start.sh 已开启），二次构建可复用 Maven 缓存
 
-# ---------- 阶段 1：Maven 编译 ----------
 FROM maven:3.9.9-eclipse-temurin-17 AS builder
 
 WORKDIR /build
 
-# 阿里云 Maven 仓库（加速国内依赖拉取）
-COPY .mvn/settings.xml /root/.m2/settings.xml
+# 放到 conf，避免与 /root/.m2/repository 的 cache mount 冲突
+COPY .mvn/settings.xml /usr/share/maven/conf/settings.xml
 
-# 复制工程源码（.dockerignore 已排除 target/）
 COPY . .
 
-# 生产 profile 打包 slion-admin 及其依赖模块
-RUN mvn -B -s /root/.m2/settings.xml clean package -Pprod -DskipTests -pl slion-admin -am
+RUN --mount=type=cache,id=slion-m2,target=/root/.m2/repository \
+    mvn -B \
+      -s /usr/share/maven/conf/settings.xml \
+      clean package \
+      -Pprod \
+      -DskipTests \
+      -pl slion-admin -am
 
-# ---------- 阶段 2：运行时镜像 ----------
 FROM bellsoft/liberica-openjdk-rocky:17.0.16-cds
 
 LABEL maintainer="Slion" \
-      org.opencontainers.image.title="slion-admin" \
-      org.opencontainers.image.description="Slion Service Admin"
+      org.opencontainers.image.title="slion-admin"
 
 RUN mkdir -p /slion/server/logs /slion/server/temp
 
 WORKDIR /slion/server
 
-# 运行时基础默认值；数据库/Redis/Kafka 等连接信息由 docker-compose 环境变量注入
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     TZ=Asia/Shanghai \
@@ -47,7 +38,6 @@ ENV LANG=C.UTF-8 \
     SPRING_SERVLET_MULTIPART_LOCATION=/slion/server/temp
 
 EXPOSE 8080
-EXPOSE 9031
 
 COPY --from=builder /build/slion-admin/target/slion-admin.jar ./app.jar
 

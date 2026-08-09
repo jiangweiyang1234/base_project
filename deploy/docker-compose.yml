@@ -1,10 +1,10 @@
-# Slion 基线部署栈：postgres + redis + admin + web(nginx)
-# 推荐用法：
-#   ./deploy/start.sh
-#   ./deploy/stop.sh
+# Slion 基线一键部署：中间件 + 后端(镜像内 Maven) + 前端(镜像内 pnpm)
+# 用法：./start.sh   或   docker compose --env-file .env up -d --build
 #
 # 可选 Kafka：
-#   ./deploy/start.sh --with-kafka
+#   ./start.sh --with-kafka
+
+name: slion-service
 
 services:
   postgres:
@@ -26,6 +26,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
     networks:
       - slion-service-net
 
@@ -50,10 +51,9 @@ services:
 
   slion-admin:
     build:
-      # 多阶段构建：镜像内 Maven 使用阿里云仓库编译
       context: ../SlionService
       dockerfile: slion-admin/Dockerfile
-    image: slion/slion-admin:1.0.0
+    image: slion/slion-admin:${IMAGE_TAG:-1.0.0}
     container_name: slion-admin
     restart: unless-stopped
     depends_on:
@@ -64,6 +64,7 @@ services:
     environment:
       TZ: Asia/Shanghai
       SPRING_PROFILES_ACTIVE: prod
+      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m}
       DB_URL: jdbc:postgresql://postgres:5432/${SLION_DB_NAME:-slion}?useUnicode=true&characterEncoding=utf8&reWriteBatchedInserts=true
       DB_USERNAME: ${SLION_DB_USER:-postgres}
       DB_PASSWORD: ${SLION_DB_PASSWORD:-postgres}
@@ -79,16 +80,20 @@ services:
       - slion-service-net
 
   slion-web:
-    image: nginx:1.27-alpine
+    build:
+      context: ../SlionWeb
+      dockerfile: Dockerfile
+      args:
+        VUE_APP_SECRET_KEY: ${VUE_APP_SECRET_KEY:-preview}
+        VUE_APP_BASE_URL: ${VUE_APP_BASE_URL:-/prod-api}
+        VUE_APP_CLIENT_ID: ${VUE_APP_CLIENT_ID:-e5cd7e4891bf95d1d19206ce24a7b32e}
+    image: slion/slion-web:${IMAGE_TAG:-1.0.0}
     container_name: slion-web
     restart: unless-stopped
     depends_on:
       - slion-admin
     ports:
       - "${SLION_WEB_HOST_PORT:-80}:80"
-    volumes:
-      - ./conf/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ../SlionWeb/dist:/usr/share/nginx/html:ro
     networks:
       - slion-service-net
 
