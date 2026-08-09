@@ -107,6 +107,8 @@ security:
     - /auth/login
     - /oauth2/**
     - /open-api/**
+    - /.well-known/**
+    - /userinfo
 
 # 多租户配置
 tenant:
@@ -238,7 +240,11 @@ warm-flow:
 
 --- # OAuth2 / Disruptor 等扩展能力
 oauth2:
-  enabled: false
+  enabled: ${OAUTH2_ENABLED:false}
+  issuer: ${OAUTH2_ISSUER:http://localhost:8080}
+  client-id: ${OAUTH2_CLIENT_ID:slion-open-api}
+  client-secret: ${OAUTH2_CLIENT_SECRET:CHANGE_ME_OAUTH_CLIENT_SECRET}
+  scope: ${OAUTH2_SCOPE:open.api}
 
 disruptor:
   enabled: false
