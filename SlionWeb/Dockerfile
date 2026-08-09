@@ -21,7 +21,7 @@ COPY vab-icons ./vab-icons
 
 # 使用 npm + 国内镜像；缓存挂载加速二次构建
 RUN --mount=type=cache,id=slion-web-npm,target=/root/.npm \
-    npm install --registry=https://registry.npmmirror.com
+    npm install --registry=https://registry.npmmirror.com --legacy-peer-deps
 
 COPY . .
 
