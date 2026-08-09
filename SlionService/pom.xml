@@ -519,19 +519,22 @@
 
     <repositories>
         <repository>
-            <id>public</id>
-            <name>huawei nexus</name>
+            <id>aliyun-public</id>
+            <name>Aliyun Maven Public</name>
             <url>https://maven.aliyun.com/repository/public</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </repositories>
 
     <pluginRepositories>
         <pluginRepository>
-            <id>public</id>
-            <name>aliyun nexus</name>
+            <id>aliyun-public</id>
+            <name>Aliyun Maven Public</name>
             <url>https://maven.aliyun.com/repository/public</url>
             <releases>
                 <enabled>true</enabled>

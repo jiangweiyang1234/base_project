@@ -1,4 +1,5 @@
 # 开发辅助栈：仅基础设施（postgres + redis），应用本地启动
+#   ./deploy/start.sh --dev
 #   docker compose -f deploy/docker-compose.dev.yml --env-file deploy/.env up -d
 
 services:
@@ -14,6 +15,8 @@ services:
     volumes:
       - slion-dev-pg:/var/lib/postgresql/data
       - ../scripts/sql/postgres:/docker-entrypoint-initdb.d:ro
+    networks:
+      - slion-service-net
 
   redis:
     image: docker.1ms.run/redis:8.0
@@ -21,6 +24,13 @@ services:
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes --requirepass ${SLION_REDIS_PASSWORD:-}
+    networks:
+      - slion-service-net
+
+networks:
+  slion-service-net:
+    name: slion-service-net
+    driver: bridge
 
 volumes:
   slion-dev-pg:

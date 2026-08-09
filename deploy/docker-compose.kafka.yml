@@ -18,4 +18,9 @@ services:
     ports:
       - "${SLION_KAFKA_HOST_PORT:-9092}:9092"
     networks:
-      - slion-net
+      - slion-service-net
+
+networks:
+  slion-service-net:
+    name: slion-service-net
+    external: true

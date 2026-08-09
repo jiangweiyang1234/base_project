@@ -17,11 +17,14 @@ FROM maven:3.9.9-eclipse-temurin-17 AS builder
 
 WORKDIR /build
 
+# 阿里云 Maven 仓库（加速国内依赖拉取）
+COPY .mvn/settings.xml /root/.m2/settings.xml
+
 # 复制工程源码（.dockerignore 已排除 target/）
 COPY . .
 
 # 生产 profile 打包 slion-admin 及其依赖模块
-RUN mvn -B clean package -Pprod -DskipTests -pl slion-admin -am
+RUN mvn -B -s /root/.m2/settings.xml clean package -Pprod -DskipTests -pl slion-admin -am
 
 # ---------- 阶段 2：运行时镜像 ----------
 FROM bellsoft/liberica-openjdk-rocky:17.0.16-cds
