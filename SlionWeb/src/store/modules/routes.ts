@@ -41,7 +41,7 @@ export const useRoutesStore = defineStore('routes', {
                 : { meta: { title: '' }, redirect: '404' },
         getActiveMenu: (state) => state.activeMenu,
         getRoutes: (state) =>
-            state.routes.filter((_route) => _route.meta.hidden !== true),
+            state.routes.filter((_route) => _route.meta?.hidden !== true),
         getPartialRoutes: (state) =>
             state.routes.find((route) => route.name === state.tab.data)
                 ?.children || [],
@@ -62,23 +62,43 @@ export const useRoutesStore = defineStore('routes', {
             const control = mode === 'visit' ? false : rolesControl
             // 设置后端路由(不需要可以删除)
             if (authentication === 'all') {
-                const {
-                    data: { list },
-                } = await getList()
-                if (!isArray(list))
+                const res: any = await getList()
+                // 兼容 { data: { list } } / { data: [] }
+                const list = isArray(res?.data?.list)
+                    ? res.data.list
+                    : isArray(res?.data)
+                      ? res.data
+                      : isArray(res?.list)
+                        ? res.list
+                        : null
+                if (!isArray(list)) {
                     gp.$baseMessage(
                         '路由格式返回有误！',
                         'error',
                         'vab-hey-message-error'
                     )
-                if (list[list.length - 1].path !== '*')
-                    list.push({
+                    throw new Error('路由格式返回有误')
+                }
+                const backendRoutes = convertRouter(list)
+                // all 模式下后端通常不含首页，保留前端 Root(/) 作为登录落地页
+                const homeRoute = asyncRoutes.find((r) => r.path === '/')
+                routes = homeRoute
+                    ? [homeRoute, ...backendRoutes]
+                    : backendRoutes
+                const hasCatchAll = routes.some(
+                    (r) =>
+                        r.path === '/:pathMatch(.*)*' ||
+                        r.path === '*' ||
+                        r.name === 'NotFound'
+                )
+                if (!hasCatchAll) {
+                    routes.push({
                         path: '/:pathMatch(.*)*',
                         redirect: '/404',
                         name: 'NotFound',
                         meta: { hidden: true },
                     })
-                routes = convertRouter(list)
+                }
             }
             // 根据权限和rolesControl过滤路由
             const accessRoutes = filterRoutes(

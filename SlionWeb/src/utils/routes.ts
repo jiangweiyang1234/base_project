@@ -13,21 +13,37 @@ import { recordRoute } from '@/config'
 export function convertRouter(asyncRoutes: VabRouteRecord[]) {
     return asyncRoutes.map((route: any) => {
         if (route.component) {
-            const component = route.component.match(/^@\S+|^Layout$/)
-            if (component)
-                if (component[0] === 'Layout') {
+            const rawComponent = String(route.component).trim()
+            const special =
+                rawComponent.match(/^(Layout|ParentView|InnerLink)$/i) ||
+                rawComponent.match(/^@\/?(Layout|ParentView|InnerLink)$/i)
+            if (special) {
+                const name = (special[1] || special[0]).toLowerCase()
+                if (name === 'layout') {
                     route.component = () => import('@vab/layouts/index.vue')
+                } else if (name === 'parentview') {
+                    route.component = () => import('@/views/ParentView.vue')
                 } else {
-                    // 后端多为 @/system/user/index，统一映射到 @/views/**
-                    const raw = component[0].replace(/^@\/*/, '')
-                    const viewPath = raw.startsWith('views/')
-                        ? raw
-                        : `views/${raw}`
-                    route.component = () => import(`@/${viewPath}.vue`)
+                    route.component = () => import('@/views/InnerLink.vue')
                 }
-            else
-                throw `后端路由加载失败，请输入'Layout'或以'@/'开头的本地组件地址: ${route.component}`
+            } else if (/^@\//.test(rawComponent) || !rawComponent.includes('://')) {
+                // 后端多为 @/system/user/index 或 system/user/index，统一映射到 @/views/**
+                const raw = rawComponent.replace(/^@\/*/, '')
+                const viewPath = raw.startsWith('views/')
+                    ? raw
+                    : `views/${raw}`
+                route.component = () => import(`@/${viewPath}.vue`)
+            } else {
+                console.error(
+                    `后端路由组件无法识别，已跳过: ${route.path} -> ${rawComponent}`
+                )
+                delete route.component
+            }
         }
+
+        // 菜单侧栏隐藏字段兼容：后端 hidden / meta.hidden
+        if (route.meta == null) route.meta = {}
+        if (route.hidden === true) route.meta.hidden = true
 
         if (route.children)
             route.children.length > 0
@@ -52,12 +68,12 @@ export function filterRoutes(
 ): VabRouteRecord[] {
     return routes
         .filter((route: VabRouteRecord) =>
-            rolesControl && !route.hidden && route.meta.guard
+            rolesControl && !route.hidden && route.meta?.guard
                 ? hasPermission(route.meta.guard)
                 : true
         )
         .flatMap((route: VabRouteRecord) =>
-            baseUrl !== '/' && route.children && route.meta.levelHidden
+            baseUrl !== '/' && route.children && route.meta?.levelHidden
                 ? [...route.children]
                 : route
         )

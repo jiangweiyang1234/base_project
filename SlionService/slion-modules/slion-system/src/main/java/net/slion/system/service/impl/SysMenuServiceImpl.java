@@ -196,10 +196,15 @@ public class SysMenuServiceImpl implements ISysMenuService {
                 router.setName(name);
             }
             router.setPath(menu.getRouterPath());
-            if (!StringUtils.equalsAnyIgnoreCase(menu.getComponentInfo(), "Layout")) {
-                router.setComponent("@/".concat(menu.getComponentInfo()));
+            String componentInfo = menu.getComponentInfo();
+            // Layout / ParentView / InnerLink 保持原标识，业务页补 @/ 前缀供前端 convertRouter 解析
+            if (StringUtils.equalsAnyIgnoreCase(componentInfo,
+                SystemConstants.LAYOUT, SystemConstants.PARENT_VIEW, SystemConstants.INNER_LINK)) {
+                router.setComponent(componentInfo);
             } else {
-                router.setComponent(menu.getComponentInfo());
+                router.setComponent(componentInfo.startsWith("@/")
+                    ? componentInfo
+                    : "@/".concat(componentInfo));
             }
             router.setQuery(menu.getQueryParam());
             router.setMeta(new MetaVo(menu.getMenuName(), menu.getIcon(), StringUtils.equals("1", menu.getIsCache()), menu.getPath(), menu.getRemark()));

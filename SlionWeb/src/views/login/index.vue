@@ -201,9 +201,10 @@
             })
 
             const handleRoute = () => {
-                return state.redirect === '/404' || state.redirect === '/403'
+                const redirect = state.redirect || '/'
+                return redirect === '/404' || redirect === '/403'
                     ? '/'
-                    : state.redirect
+                    : redirect
             }
             const handlePassword = () => {
                 state.passwordType === 'password'
@@ -215,14 +216,16 @@
             }
             const handleLogin = async () => {
                 state['formRef'].validate(async (valid) => {
-                    if (valid)
-                        try {
-                            state.loading = true
-                            await login(state.form).catch(() => {})
-                            await router.push(handleRoute())
-                        } finally {
-                            state.loading = false
-                        }
+                    if (!valid) return
+                    try {
+                        state.loading = true
+                        await login(state.form)
+                        await router.replace(handleRoute())
+                    } catch (e) {
+                        console.error('登录失败:', e)
+                    } finally {
+                        state.loading = false
+                    }
                 })
             }
             const changeCode = () => {
