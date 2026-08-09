@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.NullValue;
 import net.sf.jsqlparser.expression.StringValue;
-import net.slion.common.core.exception.ServiceException;
 import net.slion.common.core.utils.StringUtils;
 import net.slion.common.tenant.helper.TenantHelper;
 import net.slion.common.tenant.properties.TenantProperties;
@@ -28,8 +28,9 @@ public class PlusTenantLineHandler implements TenantLineHandler {
     public Expression getTenantId() {
         String tenantId = TenantHelper.getTenantId();
         if (StringUtils.isBlank(tenantId)) {
-            log.error("无法获取有效的租户id，拒绝拼接租户条件");
-            throw new ServiceException("无法获取有效的租户id");
+            // 登录监听等场景可能尚未写入租户上下文；交给 ignoreTable 跳过，避免阻断登录
+            log.warn("无法获取有效的租户id，返回 NullValue（应由 ignoreTable 忽略该表）");
+            return new NullValue();
         }
         return new StringValue(tenantId);
     }
@@ -41,18 +42,15 @@ public class PlusTenantLineHandler implements TenantLineHandler {
             return true;
         }
         String tenantId = TenantHelper.getTenantId();
+        // 无租户上下文（登录写回、定时任务等）：跳过全部租户条件
         if (StringUtils.isBlank(tenantId)) {
-            // 无租户上下文时跳过业务表租户条件，由上层鉴权保证；排除表始终忽略
-            List<String> excludes = tenantProperties.getExcludes();
-            List<String> tables = ListUtil.toList("gen_table", "gen_table_column");
-            tables.addAll(excludes);
-            return StringUtils.equalsAnyIgnoreCase(tableName, tables.toArray(new String[0]))
-                || isNonBusinessTable(tableName);
+            return true;
         }
         List<String> excludes = tenantProperties.getExcludes();
         List<String> tables = ListUtil.toList("gen_table", "gen_table_column");
         tables.addAll(excludes);
-        return StringUtils.equalsAnyIgnoreCase(tableName, tables.toArray(new String[0]));
+        return StringUtils.equalsAnyIgnoreCase(tableName, tables.toArray(new String[0]))
+            || isNonBusinessTable(tableName);
     }
 
     private boolean isNonBusinessTable(String tableName) {
