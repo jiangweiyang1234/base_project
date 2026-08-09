@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
@@ -50,7 +51,8 @@ public class RedisConfig {
             om.registerModule(javaTimeModule);
             om.setTimeZone(TimeZone.getDefault());
             om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-            // 不启用 DefaultTyping，避免 Redis 反序列化 gadget 风险；业务侧显式类型读写
+            // Spring Cache / RMap 存 Object 时需带类型信息，否则反序列化为 LinkedHashMap 导致 ClassCastException
+            om.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
             TypedJsonJacksonCodec jsonCodec = new TypedJsonJacksonCodec(Object.class, om);
             // 组合序列化 key 使用 String 内容使用通用 json 格式
             CompositeCodec codec = new CompositeCodec(StringCodec.INSTANCE, jsonCodec, jsonCodec);
