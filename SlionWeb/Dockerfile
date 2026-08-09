@@ -3,15 +3,18 @@
 #
 # 注意：不要用 alpine（musl）。image-webpack-loader 依赖的 gifsicle/mozjpeg
 # 在 alpine 上无匹配预编译包，会回退源码编译并报 autoreconf: not found。
+# 使用 bookworm-slim（glibc）即可直接使用预编译二进制。
 
 FROM node:20-bookworm-slim AS build
 
 WORKDIR /app
 
-# 证书与基础工具（pnpm/corepack 拉取依赖需要）
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+# node 官方 slim 镜像已含 ca-certificates，无需再 apt-get（国内拉 deb.debian.org 很慢）。
+# 若后续确需 apt 安装系统包，请先切换阿里云源，例如：
+#   sed -i 's|http://deb.debian.org/debian|https://mirrors.aliyun.com/debian|g' /etc/apt/sources.list.d/debian.sources \
+#   && sed -i 's|http://security.debian.org/debian-security|https://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list.d/debian.sources \
+#   && apt-get update && apt-get install -y --no-install-recommends <packages> \
+#   && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
