@@ -75,7 +75,7 @@ services:
       SLION_API_PUBLIC_KEY: ${SLION_API_PUBLIC_KEY:-}
       SLION_API_PRIVATE_KEY: ${SLION_API_PRIVATE_KEY:-}
     ports:
-      - "${SLION_ADMIN_HOST_PORT:-8080}:8080"
+      - "${SLION_ADMIN_HOST_PORT:-28080}:8080"
     networks:
       - slion-service-net
 
@@ -93,7 +93,7 @@ services:
     depends_on:
       - slion-admin
     ports:
-      - "${SLION_WEB_HOST_PORT:-80}:80"
+      - "${SLION_WEB_HOST_PORT:-280}:80"
     networks:
       - slion-service-net
 

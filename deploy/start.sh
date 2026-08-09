@@ -77,8 +77,19 @@ env_get() {
   printf '%s' "${value:-$default}"
 }
 
-WEB_PORT="$(env_get SLION_WEB_HOST_PORT 80)"
-API_PORT="$(env_get SLION_ADMIN_HOST_PORT 8080)"
+WEB_PORT="$(env_get SLION_WEB_HOST_PORT 280)"
+API_PORT="$(env_get SLION_ADMIN_HOST_PORT 28080)"
+
+# set -u 下空数组展开会报 unbound variable，用兼容写法
+
+run_compose() {
+  # 将额外参数按原样追加；无额外参数时不展开空数组
+  if ((${#EXTRA_ARGS[@]} > 0)); then
+    docker compose "$@" "${EXTRA_ARGS[@]}"
+  else
+    docker compose "$@"
+  fi
+}
 
 # 启用 BuildKit，使 Dockerfile 中 Maven/pnpm cache mount 生效
 export DOCKER_BUILDKIT=1
@@ -90,7 +101,7 @@ if [[ "$MODE" == "dev" ]]; then
   echo " Compose : $COMPOSE_DEV_FILE"
   echo " Network : slion-service-net"
   echo "=========================================="
-  docker compose -f "$COMPOSE_DEV_FILE" --env-file "$ENV_FILE" up -d "${EXTRA_ARGS[@]}"
+  run_compose -f "$COMPOSE_DEV_FILE" --env-file "$ENV_FILE" up -d
   echo
   echo "[OK] 开发栈已启动（postgres / redis）。"
   exit 0
@@ -107,10 +118,10 @@ echo "=========================================="
 
 echo "[INFO] 拉取/构建并启动全部服务（首次需下载依赖，之后会走构建缓存）..."
 if [[ "$WITH_KAFKA" -eq 1 ]]; then
-  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build "${EXTRA_ARGS[@]}"
+  run_compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
   docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_KAFKA_FILE" --env-file "$ENV_FILE" up -d
 else
-  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build "${EXTRA_ARGS[@]}"
+  run_compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
 fi
 
 echo
@@ -119,5 +130,7 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps
 
 echo
 echo "[OK] 部署完成。"
+echo "     Web  : http://<服务器IP>:${WEB_PORT}"
+echo "     API  : http://<服务器IP>:${API_PORT}"
 echo "     停止服务：./stop.sh"
 echo "     查看日志：docker compose -f docker-compose.yml --env-file .env logs -f"
