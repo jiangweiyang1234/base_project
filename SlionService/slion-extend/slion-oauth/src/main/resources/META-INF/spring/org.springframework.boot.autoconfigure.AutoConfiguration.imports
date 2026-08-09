@@ -1,2 +1,3 @@
 net.slion.oauth.config.OAuthClientConfiguration
+net.slion.oauth.config.AppSecurityPassthroughConfiguration
 net.slion.oauth.config.OAuth2AuthorizationServerConfig

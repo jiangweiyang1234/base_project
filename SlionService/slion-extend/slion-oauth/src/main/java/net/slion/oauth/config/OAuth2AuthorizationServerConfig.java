@@ -16,10 +16,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -27,8 +26,7 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -37,12 +35,11 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
 
 /**
- * Spring Authorization Server 配置（仅作用于 /oauth2/**、/open-api/**）。
- * 客户端从数据库 slion_oauth_client 读取；管理后台仍使用 Sa-Token。
+ * Spring Authorization Server 配置（仅匹配 OAuth2 协议端点与 /open-api/**）。
+ * 其余路径由 {@link AppSecurityPassthroughConfiguration} 放行，交 Sa-Token 处理。
  */
 @Slf4j
 @AutoConfiguration
-@EnableWebSecurity
 @EnableConfigurationProperties(OAuth2Properties.class)
 @ConditionalOnProperty(prefix = "oauth2", name = "enabled", havingValue = "true")
 public class OAuth2AuthorizationServerConfig {
@@ -50,13 +47,21 @@ public class OAuth2AuthorizationServerConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-            .oidc(Customizer.withDefaults());
-        http.exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
-                new LoginUrlAuthenticationEntryPoint("/login"),
-                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
-            .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()));
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+            new OAuth2AuthorizationServerConfigurer();
+        RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
+
+        http.securityMatcher(endpointsMatcher)
+            .with(authorizationServerConfigurer, authorizationServer ->
+                authorizationServer.oidc(Customizer.withDefaults()))
+            .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+            .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+            // 协议端点统一返回 401，避免浏览器被重定向到 /login 触发 Mixed Content
+            .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(
+                (request, response, authException) -> {
+                    response.setStatus(401);
+                    response.setHeader("WWW-Authenticate", "Bearer");
+                }));
         return http.build();
     }
 
@@ -66,19 +71,7 @@ public class OAuth2AuthorizationServerConfig {
         http.securityMatcher("/open-api/**")
             .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
             .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
-            .csrf(csrf -> csrf.disable());
-        return http.build();
-    }
-
-    /**
-     * 其余路径放行，交由 Sa-Token 处理管理后台鉴权
-     */
-    @Bean
-    @Order(3)
-    public SecurityFilterChain saTokenPassthroughSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/**")
-            .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
-            .csrf(csrf -> csrf.disable());
+            .csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
 

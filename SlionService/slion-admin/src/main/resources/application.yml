@@ -2,6 +2,8 @@
 server:
   # 服务器的HTTP端口，默认为8080
   port: 8080
+  # 信任 OpenResty/Nginx 的 X-Forwarded-*，避免 HTTPS 站点重定向成 http:// 触发 Mixed Content
+  forward-headers-strategy: framework
   servlet:
     # 应用的访问路径
     context-path: /

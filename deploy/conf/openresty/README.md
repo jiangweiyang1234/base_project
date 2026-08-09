@@ -16,8 +16,14 @@
 
 ```bash
 cp deploy/conf/openresty/slion.conf /usr/local/openresty/nginx/conf/vhost/slion.conf
-# 修改 server_name 后：
+# 修改 server_name；文件顶部的 map 须落在 http {} 内（整文件 include 即可）
 openresty -t && openresty -s reload
+```
+
+HTTPS 站点请保证反代带上 `X-Forwarded-Proto https`（样例已用 `$slion_forwarded_proto`），并设置：
+
+```env
+OAUTH2_ISSUER=https://slion.hxsoft.net
 ```
 
 ## 开启 OAuth2
