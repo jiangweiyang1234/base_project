@@ -145,6 +145,7 @@
         publishDefinition,
         unPublishDefinition,
     } from '@/api/workflow/definition'
+    import { buildWarmFlowDesignerUrl } from '@/utils/warmFlow'
 
     export default defineComponent({
         name: 'WorkflowDefinition',
@@ -164,7 +165,7 @@
                     flowCode: '',
                 },
                 designerVisible: false,
-                designerUrl: '/warm-flow-ui/',
+                designerUrl: buildWarmFlowDesignerUrl(),
             })
 
             const fetchData = async () => {
@@ -190,10 +191,7 @@
                 fetchData()
             }
             const openDesigner = (row) => {
-                const id = row?.id
-                state.designerUrl = id
-                    ? `/warm-flow-ui/#/design?id=${id}`
-                    : '/warm-flow-ui/'
+                state.designerUrl = buildWarmFlowDesignerUrl(row?.id)
                 state.designerVisible = true
             }
             const handlePublish = (row) => {

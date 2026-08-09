@@ -75,6 +75,15 @@ module.exports = defineConfig({
                     '^/prod-api': '',
                 },
             },
+            // Warm-Flow 设计器（iframe 同源加载，勿被前端 SPA 接管）
+            '/warm-flow-ui': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+            },
+            '/warm-flow': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+            },
         },
     },
     pwa: {

@@ -9,6 +9,10 @@ UPDATE sys_menu SET component = 'system/tenant/index' WHERE menu_id = 121;
 -- 工作流（对齐现有页面）
 UPDATE sys_menu SET component = 'workflow/task/taskWaiting' WHERE menu_id = 11619;
 UPDATE sys_menu SET component = 'workflow/task/taskFinish' WHERE menu_id = 11632;
+UPDATE sys_menu SET component = 'workflow/task/allTaskWaiting' WHERE menu_id = 11631;
+UPDATE sys_menu SET component = 'workflow/task/myDocument' WHERE menu_id = 11629;
+UPDATE sys_menu SET component = 'workflow/task/taskCopyList' WHERE menu_id = 11633;
+UPDATE sys_menu SET component = 'workflow/spel/index' WHERE menu_id = 11801;
 UPDATE sys_menu SET component = 'workflow/processDefinition/index' WHERE menu_id = 11620;
 UPDATE sys_menu SET component = 'workflow/processInstance/index' WHERE menu_id = 11621;
 UPDATE sys_menu SET component = 'workflow/category/index' WHERE menu_id = 11622;

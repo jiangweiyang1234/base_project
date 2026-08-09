@@ -118,6 +118,8 @@ security:
     - /open-api/**
     - /.well-known/**
     - /userinfo
+    # Warm-Flow 设计器静态资源与配置接口（API 仍走 /warm-flow/** 鉴权）
+    - /warm-flow-ui/**
 
 # 多租户配置
 tenant:
