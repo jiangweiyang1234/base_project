@@ -1,15 +1,25 @@
 # syntax=docker/dockerfile:1
 # 容器内 pnpm 编译前端，无需宿主机安装 Node/pnpm
-FROM node:20-alpine AS build
+#
+# 注意：不要用 alpine（musl）。image-webpack-loader 依赖的 gifsicle/mozjpeg
+# 在 alpine 上无匹配预编译包，会回退源码编译并报 autoreconf: not found。
+
+FROM node:20-bookworm-slim AS build
 
 WORKDIR /app
 
+# 证书与基础工具（pnpm/corepack 拉取依赖需要）
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
-# 国内 npm 镜像加速
-ENV PNPM_HOME=/pnpm
-ENV PATH=$PNPM_HOME:$PATH
-ENV npm_config_registry=https://registry.npmmirror.com
+# 国内 npm 镜像加速；跳过不必要的原生包源码编译
+ENV PNPM_HOME=/pnpm \
+    PATH=/pnpm:$PATH \
+    npm_config_registry=https://registry.npmmirror.com \
+    npm_config_build_from_source=false
 
 COPY package.json .npmrc ./
 COPY pnpm-lock.yaml* ./
