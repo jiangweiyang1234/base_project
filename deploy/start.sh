@@ -30,8 +30,8 @@ usage() {
   -h, --help      显示帮助
 
 说明:
-  后端在镜像内用 Maven（阿里云仓库）编译，前端在镜像内用 pnpm 编译。
-  宿主机不需要安装 Maven / Node / pnpm。
+  后端在镜像内用 Maven（阿里云仓库）编译，前端在镜像内用 npm（npmmirror）编译。
+  宿主机不需要安装 Maven / Node / pnpm / cnpm。
 EOF
 }
 
