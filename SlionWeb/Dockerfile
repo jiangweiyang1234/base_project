@@ -37,7 +37,10 @@ ENV VUE_APP_BASE_URL=${VUE_APP_BASE_URL} \
     VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID} \
     NODE_OPTIONS=--max_old_space_size=4096
 
-RUN echo "[slion-web] npm run build start..." && \
+# 持久化 Webpack filesystem cache：源码小改时二次构建可明显低于 100s
+# （首次全量仍约 1～2 分钟，取决于 CPU；需 BuildKit）
+RUN --mount=type=cache,id=slion-web-webpack-cache,target=/app/node_modules/.cache \
+    echo "[slion-web] npm run build start..." && \
     npm run build && \
     test -d /app/dist && test -n "$(ls -A /app/dist)" && \
     echo "[slion-web] npm run build done, dist ready"

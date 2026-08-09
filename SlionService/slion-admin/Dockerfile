@@ -25,7 +25,18 @@ FROM bellsoft/liberica-openjdk-rocky:17.0.16-cds
 LABEL maintainer="Slion" \
       org.opencontainers.image.title="slion-admin"
 
-RUN mkdir -p /slion/server/logs /slion/server/temp
+# 验证码依赖 AWT 字体；精简 JRE 镜像默认无字体，会导致 /auth/code 失败或超时
+RUN set -eux; \
+    if command -v microdnf >/dev/null 2>&1; then \
+      microdnf install -y fontconfig dejavu-sans-fonts && microdnf clean all; \
+    elif command -v dnf >/dev/null 2>&1; then \
+      dnf install -y fontconfig dejavu-sans-fonts && dnf clean all; \
+    elif command -v yum >/dev/null 2>&1; then \
+      yum install -y fontconfig dejavu-sans-fonts && yum clean all; \
+    else \
+      echo "[WARN] no package manager; captcha may fail without fonts"; \
+    fi; \
+    mkdir -p /slion/server/logs /slion/server/temp
 
 WORKDIR /slion/server
 
@@ -33,6 +44,7 @@ ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     TZ=Asia/Shanghai \
     JAVA_OPTS="" \
+    JAVA_TOOL_OPTIONS="-Djava.awt.headless=true" \
     SPRING_PROFILES_ACTIVE=prod \
     SERVER_PORT=8080 \
     SPRING_SERVLET_MULTIPART_LOCATION=/slion/server/temp
@@ -44,5 +56,6 @@ COPY --from=builder /build/slion-admin/target/slion-admin.jar ./app.jar
 SHELL ["/bin/bash", "-c"]
 
 ENTRYPOINT java -Djava.security.egd=file:/dev/./urandom \
+           -Djava.awt.headless=true \
            -XX:+HeapDumpOnOutOfMemoryError -XX:+UseZGC ${JAVA_OPTS} \
            -jar app.jar

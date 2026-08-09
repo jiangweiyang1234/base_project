@@ -105,6 +105,13 @@ security:
     - /favicon.ico
     - /error
     - /auth/login
+    - /auth/code
+    - /auth/logout
+    - /auth/binding/*
+    - /auth/social/callback
+    - /register
+    - /resource/sms/code
+    - /resource/email/code
     - /oauth2/**
     - /open-api/**
     - /.well-known/**

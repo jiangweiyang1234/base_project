@@ -140,7 +140,8 @@ public class CaptchaController {
         }
         WaveAndCircleCaptcha captcha = new WaveAndCircleCaptcha(160, 50);
         // captcha.setBackground(Color.WHITE); // 不设置就是透明底
-        captcha.setFont(new Font("Arial", Font.BOLD, 45));
+        // 使用逻辑字体，避免容器内缺少 Arial 导致验证码生成失败
+        captcha.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 45));
         captcha.setGenerator(codeGenerator);
         captcha.createCode();
         // 如果是数学验证码，使用SpEL表达式处理验证码结果
