@@ -1,27 +1,29 @@
 # syntax=docker/dockerfile:1
-# 容器内 npm 编译前端（与 SlionEhr 一致），无需宿主机安装 Node/pnpm/cnpm
-#
-# 使用 bookworm-slim（glibc），避免 alpine/musl 下 imagemin 原生包问题。
-# 依赖走 npmmirror 国内源，加速安装。
+# 容器内 npm 编译前端，无需宿主机安装 Node/pnpm/cnpm
+# 使用 Node 22 + bookworm-slim（glibc）+ npmmirror
 
-FROM node:20-bookworm-slim AS build
+FROM node:22-bookworm-slim AS build
 
 WORKDIR /app
 
-# node 官方 slim 已含 ca-certificates，不再 apt-get
-
+# 开启安装日志，避免看起来“卡住”；走国内源
 ENV npm_config_registry=https://registry.npmmirror.com \
     npm_config_fund=false \
     npm_config_audit=false \
-    npm_config_progress=false \
-    npm_config_build_from_source=false
+    npm_config_progress=true \
+    npm_config_fetch_retries=5 \
+    npm_config_fetch_retry_mintimeout=20000 \
+    npm_config_fetch_retry_maxtimeout=120000 \
+    npm_config_build_from_source=false \
+    npm_config_legacy_peer_deps=true
 
 COPY package.json .npmrc ./
 COPY vab-icons ./vab-icons
 
-# 使用 npm + 国内镜像；缓存挂载加速二次构建
-RUN --mount=type=cache,id=slion-web-npm,target=/root/.npm \
-    npm install --registry=https://registry.npmmirror.com --legacy-peer-deps
+RUN --mount=type=cache,id=slion-web-npm-node22,target=/root/.npm \
+    echo "[slion-web] npm install start (may take several minutes on first build)..." && \
+    npm install --registry=https://registry.npmmirror.com --legacy-peer-deps --no-audit --no-fund && \
+    echo "[slion-web] npm install done"
 
 COPY . .
 
@@ -33,7 +35,9 @@ ENV VUE_APP_SECRET_KEY=${VUE_APP_SECRET_KEY} \
     VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID} \
     NODE_OPTIONS=--max_old_space_size=4096
 
-RUN npm run build
+RUN echo "[slion-web] npm run build start..." && \
+    npm run build && \
+    echo "[slion-web] npm run build done"
 
 FROM nginx:1.27-alpine
 
