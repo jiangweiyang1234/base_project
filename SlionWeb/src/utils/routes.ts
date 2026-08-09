@@ -11,47 +11,66 @@ import { recordRoute } from '@/config'
  * @returns {*}
  */
 export function convertRouter(asyncRoutes: VabRouteRecord[]) {
-    return asyncRoutes.map((route: any) => {
-        if (route.component) {
-            const rawComponent = String(route.component).trim()
-            const special =
-                rawComponent.match(/^(Layout|ParentView|InnerLink)$/i) ||
-                rawComponent.match(/^@\/?(Layout|ParentView|InnerLink)$/i)
-            if (special) {
-                const name = (special[1] || special[0]).toLowerCase()
-                if (name === 'layout') {
-                    route.component = () => import('@vab/layouts/index.vue')
-                } else if (name === 'parentview') {
-                    route.component = () => import('@/views/ParentView.vue')
-                } else {
-                    route.component = () => import('@/views/InnerLink.vue')
-                }
-            } else if (/^@\//.test(rawComponent) || !rawComponent.includes('://')) {
-                // 后端多为 @/system/user/index 或 system/user/index，统一映射到 @/views/**
-                const raw = rawComponent.replace(/^@\/*/, '')
-                const viewPath = raw.startsWith('views/')
-                    ? raw
-                    : `views/${raw}`
-                route.component = () => import(`@/${viewPath}.vue`)
-            } else {
-                console.error(
-                    `后端路由组件无法识别，已跳过: ${route.path} -> ${rawComponent}`
-                )
+    return asyncRoutes
+        .map((route: any) => {
+            // 外链仅保留菜单数据，不参与 vue-router 注册
+            if (isExternal(route.path)) {
+                if (route.meta == null) route.meta = {}
+                route.meta.target = '_blank'
                 delete route.component
+                delete route.children
+                return route
             }
-        }
 
-        // 菜单侧栏隐藏字段兼容：后端 hidden / meta.hidden
-        if (route.meta == null) route.meta = {}
-        if (route.hidden === true) route.meta.hidden = true
+            if (route.component) {
+                const rawComponent = String(route.component).trim()
+                const special =
+                    rawComponent.match(/^(Layout|ParentView|InnerLink)$/i) ||
+                    rawComponent.match(
+                        /^@\/?(Layout|ParentView|InnerLink)$/i
+                    )
+                if (special) {
+                    const name = (special[1] || special[0]).toLowerCase()
+                    if (name === 'layout') {
+                        route.component = () =>
+                            import('@vab/layouts/index.vue')
+                    } else if (name === 'parentview') {
+                        route.component = () =>
+                            import('@/views/ParentView.vue')
+                    } else {
+                        route.component = () =>
+                            import('@/views/InnerLink.vue')
+                    }
+                } else if (
+                    /^@\//.test(rawComponent) ||
+                    !rawComponent.includes('://')
+                ) {
+                    // 后端多为 @/system/user/index 或 system/user/index，统一映射到 @/views/**
+                    const raw = rawComponent.replace(/^@\/*/, '')
+                    const viewPath = raw.startsWith('views/')
+                        ? raw
+                        : `views/${raw}`
+                    route.component = () => import(`@/${viewPath}.vue`)
+                } else {
+                    console.error(
+                        `后端路由组件无法识别，已跳过: ${route.path} -> ${rawComponent}`
+                    )
+                    delete route.component
+                }
+            }
 
-        if (route.children)
-            route.children.length > 0
-                ? (route.children = convertRouter(route.children))
-                : delete route.children
+            // 菜单侧栏隐藏字段兼容：后端 hidden / meta.hidden
+            if (route.meta == null) route.meta = {}
+            if (route.hidden === true) route.meta.hidden = true
 
-        return route
-    })
+            if (route.children)
+                route.children.length > 0
+                    ? (route.children = convertRouter(route.children))
+                    : delete route.children
+
+            return route
+        })
+        .filter(Boolean)
 }
 
 /**
@@ -93,9 +112,16 @@ export function filterRoutes(
                     route.childrenPathList = route.children.flatMap(
                         (_) => <string[]>_.childrenPathList
                     )
-                    if (!route.redirect)
-                        route.redirect =
-                            route.children[0].redirect || route.children[0].path
+                    if (!route.redirect) {
+                        const firstInternal = route.children.find(
+                            (child) =>
+                                !isExternal(child.redirect || child.path)
+                        )
+                        if (firstInternal) {
+                            route.redirect =
+                                firstInternal.redirect || firstInternal.path
+                        }
+                    }
                 }
             } else route.childrenPathList = [route.path]
             return route

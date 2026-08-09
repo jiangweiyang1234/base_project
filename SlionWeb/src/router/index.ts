@@ -14,6 +14,7 @@ import { setupPermissions } from './permissions'
 import type { RouteRecordName, RouteRecordRaw } from 'vue-router'
 
 import { authentication, isHashRouterMode, publicPath } from '@/config'
+import { isExternal } from '@/utils/validate'
 
 export const constantRoutes: VabRouteRecord[] = [
     {
@@ -299,12 +300,15 @@ const router = createRouter({
 
 function fatteningRoutes(routes: VabRouteRecord[]): VabRouteRecord[] {
     return routes.flatMap((route: VabRouteRecord) => {
+        // http(s) 外链只用于侧栏展示，不能注册进 vue-router
+        if (isExternal(route.path)) return []
         return route.children ? fatteningRoutes(route.children) : route
     })
 }
 
 function addRouter(routes: VabRouteRecord[]) {
     routes.forEach((route: VabRouteRecord) => {
+        if (isExternal(route.path)) return
         if (!router.hasRoute(route.name))
             router.addRoute(route as RouteRecordRaw)
         if (route.children) addRouter(route.children)
