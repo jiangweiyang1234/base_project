@@ -45,6 +45,25 @@ module.exports = defineConfig({
     lintOnSave,
     transpileDependencies,
     parallel: true, // 启用多进程处理
+    // 多页：主站 + 表单设计器宿主（iframe，隔离 VAB 全局样式）
+    pages: {
+        index: {
+            entry: 'src/main.ts',
+            template: 'public/index.html',
+            filename: 'index.html',
+            title,
+            // 项目自定义了 splitChunks 名称，勿用默认 chunk-vendors/common
+            chunks: ['index'],
+        },
+        formDesignerHost: {
+            entry: 'src/form-designer-host/main.ts',
+            template: 'public/form-designer-host.html',
+            filename: 'form-designer-host.html',
+            title: '表单设计器',
+            // 仅注入本入口及其依赖 split chunk，避免带上主站 VAB
+            chunks: ['formDesignerHost'],
+        },
+    },
     devServer: {
         compress: true,
         client: {

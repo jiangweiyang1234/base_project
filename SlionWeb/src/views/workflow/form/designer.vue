@@ -23,11 +23,12 @@
         </header>
 
         <div v-show="viewMode === 'design'" class="form-designer-page__canvas">
-            <fc-designer
-                v-if="designerReady"
-                ref="designerRef"
-                :config="designerConfig"
-                :height="designerHeight"
+            <iframe
+                ref="frameRef"
+                class="form-designer-page__frame"
+                :src="hostSrc"
+                title="表单设计器"
+                @load="onFrameLoad"
             />
         </div>
 
@@ -93,8 +94,6 @@
 </template>
 
 <script>
-    import '@/styles/fc-designer-index.css'
-    import '@/styles/fc-designer-icon.css'
     import {
         getForm,
         saveFormContent,
@@ -106,8 +105,7 @@
         hydrateDictOptions,
     } from '@/utils/formDesigner'
 
-    /** 顶栏高度，与样式保持一致 */
-    const BAR_PX = 48
+    let requestSeq = 0
 
     export default defineComponent({
         name: 'WorkflowFormDesigner',
@@ -117,9 +115,10 @@
             const $baseMessage = inject('$baseMessage')
             const $baseConfirm = inject('$baseConfirm')
 
-            const designerRef = ref(null)
-            const designerReady = ref(false)
-            const designerHeight = ref(600)
+            const frameRef = ref(null)
+            const hostReady = ref(false)
+            const pendingRules = ref([])
+            const pendingRequests = new Map()
             const saving = ref(false)
             const viewMode = ref('design')
             const codeTab = ref('json')
@@ -133,12 +132,6 @@
                 submitBtn: false,
                 resetBtn: false,
             })
-            const designerConfig = {
-                showSaveBtn: false,
-                showDevice: true,
-                showFormConfig: true,
-                showConfig: true,
-            }
             const meta = reactive({
                 id: undefined,
                 formCode: '',
@@ -151,54 +144,75 @@
                 version: '',
             })
 
-            const syncHeight = () => {
-                designerHeight.value = Math.max(window.innerHeight - BAR_PX, 480)
+            // 独立宿主页（无 VAB 样式），与主站同域；publicPath 为空时用相对路径
+            const hostSrc = computed(() => {
+                const base = process.env.BASE_URL || ''
+                if (!base || base === '/') return 'form-designer-host.html'
+                const prefix = base.endsWith('/') ? base : `${base}/`
+                return `${prefix}form-designer-host.html`
+            })
+
+            const postToHost = (type, payload = {}) => {
+                const win = frameRef.value?.contentWindow
+                if (!win) return
+                win.postMessage({ target: 'fc-designer-host', type, ...payload }, '*')
             }
 
-            const getDesignerApi = () => designerRef.value
-
-            const readRules = () => {
-                const api = getDesignerApi()
-                if (!api?.getRule) return []
-                try {
-                    return api.getRule() || []
-                } catch {
-                    return []
+            const syncRulesToHost = (rules) => {
+                pendingRules.value = Array.isArray(rules) ? rules : []
+                if (hostReady.value) {
+                    postToHost('setRule', { rules: pendingRules.value })
                 }
             }
 
-            const writeRules = (rules) => {
-                const api = getDesignerApi()
-                if (!api?.setRule) return
-                api.setRule(Array.isArray(rules) ? rules : [])
-            }
-
-            const injectDictPropConfig = () => {
-                const api = getDesignerApi()
-                if (!api?.setComponentRuleConfig) return
-                const dictRule = () => [
-                    {
-                        type: 'input',
-                        field: 'props.dictType',
-                        title: '系统字典类型',
-                        info: '填写字典类型编码，如 sys_user_sex；预览/运行时自动拉取选项',
-                    },
-                ]
-                ;['select', 'radio', 'checkbox', 'cascader'].forEach((id) => {
-                    try {
-                        api.setComponentRuleConfig(id, dictRule, true)
-                    } catch (e) {
-                        // ignore
-                    }
+            const requestRulesFromHost = () => {
+                if (!hostReady.value) {
+                    return Promise.resolve(pendingRules.value || [])
+                }
+                const requestId = `r-${++requestSeq}`
+                return new Promise((resolve) => {
+                    const timer = setTimeout(() => {
+                        pendingRequests.delete(requestId)
+                        resolve(pendingRules.value || [])
+                    }, 3000)
+                    pendingRequests.set(requestId, (rules) => {
+                        clearTimeout(timer)
+                        resolve(rules)
+                    })
+                    postToHost('getRule', { requestId })
                 })
             }
 
-            const syncCodePanels = async () => {
-                const rules = readRules()
-                codeJson.value = JSON.stringify(rules, null, 2)
-                codeHtml.value = buildHtmlPreviewHint(rules)
-                codeVue.value = buildVueSfcSnippet(rules, meta.formCode || 'BizForm')
-                previewRule.value = await hydrateDictOptions(rules)
+            const onHostMessage = (event) => {
+                const data = event?.data
+                if (!data || data.source !== 'fc-designer-host') return
+                if (data.type === 'ready' || data.type === 'pong') {
+                    hostReady.value = true
+                    postToHost('setRule', { rules: pendingRules.value || [] })
+                    return
+                }
+                if (data.type === 'rule') {
+                    const cb = pendingRequests.get(data.requestId)
+                    if (cb) {
+                        pendingRequests.delete(data.requestId)
+                        const rules = Array.isArray(data.rules) ? data.rules : []
+                        pendingRules.value = rules
+                        cb(rules)
+                    }
+                }
+            }
+
+            const onFrameLoad = () => {
+                // ready 由宿主 postMessage 上报；这里仅兜底 ping
+                postToHost('ping')
+            }
+
+            const syncCodePanels = async (rules) => {
+                const list = Array.isArray(rules) ? rules : pendingRules.value || []
+                codeJson.value = JSON.stringify(list, null, 2)
+                codeHtml.value = buildHtmlPreviewHint(list)
+                codeVue.value = buildVueSfcSnippet(list, meta.formCode || 'BizForm')
+                previewRule.value = await hydrateDictOptions(list)
             }
 
             const applyJsonToDesigner = () => {
@@ -208,8 +222,8 @@
                         $baseMessage('JSON 必须是数组（rule 列表）', 'warning')
                         return
                     }
-                    writeRules(parsed)
-                    syncCodePanels()
+                    syncRulesToHost(parsed)
+                    syncCodePanels(parsed)
                 } catch (e) {
                     $baseMessage('JSON 格式不正确', 'error')
                 }
@@ -219,7 +233,6 @@
                 const id = route.query.id
                 if (!id) {
                     $baseMessage('缺少表单 id，请从列表进入设计', 'warning')
-                    designerReady.value = true
                     return
                 }
                 try {
@@ -236,16 +249,10 @@
                             rules = []
                         }
                     }
-                    syncHeight()
-                    designerReady.value = true
-                    await nextTick()
-                    await nextTick()
-                    writeRules(rules)
-                    injectDictPropConfig()
-                    await syncCodePanels()
+                    syncRulesToHost(rules)
+                    await syncCodePanels(rules)
                 } catch (e) {
                     console.error(e)
-                    designerReady.value = true
                 }
             }
 
@@ -265,17 +272,19 @@
                 if (viewMode.value === 'code' && codeTab.value === 'json') {
                     applyJsonToDesigner()
                 }
-                const rules = attachDictFetch(readRules())
-                const formContent = JSON.stringify(rules)
                 saving.value = true
                 try {
+                    const raw = await requestRulesFromHost()
+                    const rules = attachDictFetch(raw)
+                    const formContent = JSON.stringify(rules)
                     const { msg } = await saveFormContent({
                         id: meta.id,
                         formContent,
                     })
                     meta.formContent = formContent
                     meta.formType = 0
-                    writeRules(rules)
+                    syncRulesToHost(rules)
+                    await syncCodePanels(rules)
                     $baseMessage(msg || '保存成功', 'success', 'vab-hey-message-success')
                 } catch (e) {
                     console.error(e)
@@ -287,8 +296,10 @@
             const handlePreview = async () => {
                 if (viewMode.value === 'code' && codeTab.value === 'json') {
                     applyJsonToDesigner()
+                } else {
+                    const rules = await requestRulesFromHost()
+                    await syncCodePanels(rules)
                 }
-                await syncCodePanels()
                 previewVisible.value = true
             }
 
@@ -298,33 +309,36 @@
                 })
             }
 
-            watch(viewMode, (mode) => {
-                if (mode === 'code') syncCodePanels()
+            watch(viewMode, async (mode) => {
+                if (mode === 'code') {
+                    const rules = await requestRulesFromHost()
+                    await syncCodePanels(rules)
+                }
             })
 
-            watch(codeTab, (tab) => {
-                if (tab === 'html' || tab === 'vue') syncCodePanels()
+            watch(codeTab, async (tab) => {
+                if (tab === 'html' || tab === 'vue') {
+                    const rules = await requestRulesFromHost()
+                    await syncCodePanels(rules)
+                }
             })
 
             onMounted(() => {
                 document.documentElement.classList.add('fc-designer-fullscreen')
                 document.body.classList.add('fc-designer-fullscreen')
-                syncHeight()
-                window.addEventListener('resize', syncHeight)
+                window.addEventListener('message', onHostMessage)
                 loadForm()
             })
 
             onBeforeUnmount(() => {
                 document.documentElement.classList.remove('fc-designer-fullscreen')
                 document.body.classList.remove('fc-designer-fullscreen')
-                window.removeEventListener('resize', syncHeight)
+                window.removeEventListener('message', onHostMessage)
             })
 
             return {
-                designerRef,
-                designerReady,
-                designerHeight,
-                designerConfig,
+                frameRef,
+                hostSrc,
                 saving,
                 viewMode,
                 codeTab,
@@ -339,6 +353,7 @@
                 handleSave,
                 handlePreview,
                 applyJsonToDesigner,
+                onFrameLoad,
             }
         },
     })
@@ -358,14 +373,12 @@
     body.fc-designer-fullscreen #app {
         width: 100% !important;
         height: 100% !important;
-        min-height: 0 !important;
         overflow: hidden !important;
     }
 
     .form-designer-page {
         display: flex;
         flex-direction: column;
-        box-sizing: border-box;
         width: 100vw;
         height: 100vh;
         margin: 0;
@@ -382,7 +395,6 @@
         justify-content: space-between;
         gap: 12px;
         box-sizing: border-box;
-        width: 100%;
         height: 48px;
         padding: 0 12px;
         background: #fff;
@@ -413,12 +425,19 @@
     }
 
     .form-designer-page__canvas {
-        position: relative;
         flex: 1 1 auto;
         width: 100%;
         min-height: 0;
         overflow: hidden;
         background: #f5f5f5;
+    }
+
+    .form-designer-page__frame {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #fff;
     }
 
     .form-designer-page__code {
@@ -446,139 +465,5 @@
         border: 1px dashed #d0d5dd;
         border-radius: 8px;
         background: #fafafa;
-    }
-
-    /* ========== FcDesigner 三列：用 grid 钉死，不再依赖 el-container flex ========== */
-    .form-designer-page ._fc-designer {
-        position: relative !important;
-        box-sizing: border-box !important;
-        width: 100% !important;
-        /* 高度由组件 height 数字 prop 写到 inline style，禁止被 100% !important 覆盖 */
-        min-height: 0 !important;
-        overflow: hidden !important;
-        background: #fff !important;
-    }
-
-    .form-designer-page ._fc-designer.el-container {
-        /* 外层只有一个 el-main，方向无所谓，保持默认即可 */
-        display: block !important;
-    }
-
-    .form-designer-page ._fc-designer > .el-main {
-        position: absolute !important;
-        inset: 0 !important;
-        box-sizing: border-box !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-    }
-
-    /* 核心：左 | 中 | 右 */
-    .form-designer-page ._fc-designer > .el-main > .el-container {
-        display: grid !important;
-        grid-template-columns: 266px minmax(0, 1fr) 320px !important;
-        grid-template-rows: minmax(0, 1fr) !important;
-        align-items: stretch !important;
-        box-sizing: border-box !important;
-        width: 100% !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-        flex-direction: unset !important;
-    }
-
-    .form-designer-page ._fc-l,
-    .form-designer-page ._fc-l.el-aside {
-        grid-column: 1 !important;
-        box-sizing: border-box !important;
-        width: 266px !important;
-        max-width: 266px !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-        border-right: 1px solid #ececec !important;
-        background: #fff !important;
-    }
-
-    .form-designer-page ._fc-m,
-    .form-designer-page ._fc-m.el-container {
-        grid-column: 2 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        box-sizing: border-box !important;
-        width: auto !important;
-        min-width: 0 !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-        background: #f5f5f5 !important;
-    }
-
-    .form-designer-page ._fc-r,
-    .form-designer-page ._fc-r.el-aside {
-        grid-column: 3 !important;
-        box-sizing: border-box !important;
-        width: 320px !important;
-        max-width: 320px !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-        border-left: 1px solid #ececec !important;
-        background: #fff !important;
-    }
-
-    .form-designer-page ._fc-l > .el-container,
-    .form-designer-page ._fc-r > .el-container {
-        display: flex !important;
-        flex-direction: column !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-    }
-
-    .form-designer-page ._fc-l > .el-container > .el-main,
-    .form-designer-page ._fc-r > .el-container > .el-main {
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        overflow: auto !important;
-    }
-
-    .form-designer-page ._fc-m-tools,
-    .form-designer-page ._fc-m > .el-header {
-        flex: 0 0 40px !important;
-        height: 40px !important;
-        overflow: hidden !important;
-        background: #fff !important;
-    }
-
-    .form-designer-page ._fc-m > .el-main,
-    .form-designer-page ._fc-m-con {
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        overflow: auto !important;
-        background: #f5f5f5 !important;
-    }
-
-    /* 画布拖拽区：保证可见可投放 */
-    .form-designer-page ._fc-m-drag {
-        box-sizing: border-box !important;
-        width: 100% !important;
-        min-height: calc(100% - 8px) !important;
-        height: auto !important;
-        padding: 8px !important;
-        background: #fff !important;
-        border: 1px dashed #c0c4cc !important;
-        border-radius: 4px !important;
-    }
-
-    .form-designer-page ._fd-draggable-drag,
-    .form-designer-page ._fd-draggable-drag.drag-holder {
-        box-sizing: border-box !important;
-        width: 100% !important;
-        min-height: 360px !important;
-    }
-
-    .form-designer-page ._fd-draggable-drag.drag-holder:after {
-        font-size: 16px !important;
-        color: #909399 !important;
     }
 </style>

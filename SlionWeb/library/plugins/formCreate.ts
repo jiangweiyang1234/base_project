@@ -9,8 +9,8 @@ import { parseDictResponse } from '@/utils/formDesigner'
  */
 export default {
     install(app: App) {
-        app.use(FcDesigner)
-        app.use(FcDesigner.formCreate)
+        app.use(FcDesigner as any)
+        app.use(FcDesigner.formCreate as any)
 
         const formCreate = FcDesigner.formCreate
         if (formCreate && typeof formCreate.fetch !== 'undefined') {
