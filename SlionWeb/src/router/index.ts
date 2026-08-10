@@ -57,27 +57,15 @@ export const constantRoutes: VabRouteRecord[] = [
             hidden: true,
         },
     },
-    // 表单设计器：隐藏页，不依赖后端菜单也能打开（避免 visible=1 未下发路由时 404）
+    // 表单设计器：独立全屏页（不套 Layout），避免后台壳层样式把三列挤成上下结构
     {
-        path: '/workflow/formDesigner',
-        name: 'WorkflowFormDesignerRoot',
-        component: Layout,
+        path: '/form-designer',
+        name: 'WorkflowFormDesigner',
+        component: () => import('@/views/workflow/form/designer.vue'),
         meta: {
             hidden: true,
             title: '表单设计',
         },
-        children: [
-            {
-                path: '',
-                name: 'WorkflowFormDesigner',
-                component: () =>
-                    import('@/views/workflow/form/designer.vue'),
-                meta: {
-                    hidden: true,
-                    title: '表单设计',
-                },
-            },
-        ],
     },
 ]
 

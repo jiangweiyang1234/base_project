@@ -187,7 +187,7 @@
             const handleDesign = (row) => {
                 if (!row?.id) return
                 router.push({
-                    path: '/workflow/formDesigner',
+                    path: '/form-designer',
                     query: { id: String(row.id) },
                 })
             }
