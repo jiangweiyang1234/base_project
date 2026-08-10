@@ -4,8 +4,10 @@
 #
 # 重要：不要在镜像里 ENV VUE_APP_SECRET_KEY=preview，
 # Vue CLI 不会用 .env.local 覆盖已存在的环境变量，会导致打包被 vue.config.js 拦截且无 dist。
+#
+# 基础镜像走国内代理（与 deploy/docker-compose 中 postgres/redis 一致），避免直连 Docker Hub 卡住
 
-FROM node:22-bookworm-slim AS build
+FROM docker.1ms.run/library/node:22-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -48,7 +50,7 @@ RUN --mount=type=cache,id=slion-web-webpack-cache,target=/app/node_modules/.cach
     test -d /app/dist && test -n "$(ls -A /app/dist)" && \
     echo "[slion-web] npm run build done, dist ready"
 
-FROM nginx:1.27-alpine
+FROM docker.1ms.run/library/nginx:1.27-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
