@@ -50,8 +50,9 @@ services:
       - slion-service-net
 
   # 对象存储（系统管理 → 上传文件 / OSS）
+  # 使用测试机已有镜像 docker.1ms.run/minio/minio:latest-cicd（内含 mc，无需另拉 mc 镜像）
   minio:
-    image: docker.1ms.run/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: docker.1ms.run/minio/minio:latest-cicd
     container_name: slion-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -70,7 +71,7 @@ services:
   # 初始化默认桶 ruoyi（与 sys_oss_config 种子一致）
   # 一次性任务：成功后状态为 Exited(0)，属正常，不是失败
   minio-init:
-    image: docker.1ms.run/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    image: docker.1ms.run/minio/minio:latest-cicd
     container_name: slion-minio-init
     depends_on:
       minio:
