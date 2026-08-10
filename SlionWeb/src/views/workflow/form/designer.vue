@@ -22,16 +22,17 @@
             </div>
         </header>
 
-        <div v-show="viewMode === 'design'" ref="canvasRef" class="form-designer-page__canvas">
+        <div v-show="viewMode === 'design'" class="form-designer-page__canvas">
             <fc-designer
                 v-if="designerReady"
                 ref="designerRef"
-                :height="canvasHeight"
+                :config="designerConfig"
+                :height="designerHeight"
             />
         </div>
 
         <div v-show="viewMode === 'code'" class="form-designer-page__code">
-            <el-tabs v-model="codeTab" class="form-designer-page__tabs">
+            <el-tabs v-model="codeTab">
                 <el-tab-pane label="JSON" name="json">
                     <el-input
                         v-model="codeJson"
@@ -44,9 +45,9 @@
                     <el-alert
                         :closable="false"
                         show-icon
+                        style="margin-bottom: 12px"
                         title="HTML 由 form-create 根据 JSON 动态渲染；下方为结构提示与实时预览"
                         type="info"
-                        style="margin-bottom: 12px"
                     />
                     <el-input
                         v-model="codeHtml"
@@ -105,7 +106,8 @@
         hydrateDictOptions,
     } from '@/utils/formDesigner'
 
-    const BAR_HEIGHT = 52
+    /** 顶栏高度，与样式保持一致 */
+    const BAR_PX = 48
 
     export default defineComponent({
         name: 'WorkflowFormDesigner',
@@ -116,9 +118,8 @@
             const $baseConfirm = inject('$baseConfirm')
 
             const designerRef = ref(null)
-            const canvasRef = ref(null)
             const designerReady = ref(false)
-            const canvasHeight = ref('600px')
+            const designerHeight = ref(600)
             const saving = ref(false)
             const viewMode = ref('design')
             const codeTab = ref('json')
@@ -132,6 +133,12 @@
                 submitBtn: false,
                 resetBtn: false,
             })
+            const designerConfig = {
+                showSaveBtn: false,
+                showDevice: true,
+                showFormConfig: true,
+                showConfig: true,
+            }
             const meta = reactive({
                 id: undefined,
                 formCode: '',
@@ -144,9 +151,8 @@
                 version: '',
             })
 
-            const syncCanvasHeight = () => {
-                const h = Math.max(window.innerHeight - BAR_HEIGHT, 560)
-                canvasHeight.value = `${h}px`
+            const syncHeight = () => {
+                designerHeight.value = Math.max(window.innerHeight - BAR_PX, 480)
             }
 
             const getDesignerApi = () => designerRef.value
@@ -230,14 +236,13 @@
                             rules = []
                         }
                     }
+                    syncHeight()
                     designerReady.value = true
                     await nextTick()
-                    // 等设计器完成挂载后再灌规则
-                    setTimeout(() => {
-                        writeRules(rules)
-                        injectDictPropConfig()
-                        syncCodePanels()
-                    }, 50)
+                    await nextTick()
+                    writeRules(rules)
+                    injectDictPropConfig()
+                    await syncCodePanels()
                 } catch (e) {
                     console.error(e)
                     designerReady.value = true
@@ -304,22 +309,22 @@
             onMounted(() => {
                 document.documentElement.classList.add('fc-designer-fullscreen')
                 document.body.classList.add('fc-designer-fullscreen')
-                syncCanvasHeight()
-                window.addEventListener('resize', syncCanvasHeight)
+                syncHeight()
+                window.addEventListener('resize', syncHeight)
                 loadForm()
             })
 
             onBeforeUnmount(() => {
                 document.documentElement.classList.remove('fc-designer-fullscreen')
                 document.body.classList.remove('fc-designer-fullscreen')
-                window.removeEventListener('resize', syncCanvasHeight)
+                window.removeEventListener('resize', syncHeight)
             })
 
             return {
                 designerRef,
-                canvasRef,
                 designerReady,
-                canvasHeight,
+                designerHeight,
+                designerConfig,
                 saving,
                 viewMode,
                 codeTab,
@@ -340,7 +345,6 @@
 </script>
 
 <style lang="scss">
-    /* 独立全屏页：彻底摆脱后台 Layout 对 el-container 的干扰 */
     html.fc-designer-fullscreen,
     body.fc-designer-fullscreen {
         width: 100% !important;
@@ -354,30 +358,33 @@
     body.fc-designer-fullscreen #app {
         width: 100% !important;
         height: 100% !important;
+        min-height: 0 !important;
         overflow: hidden !important;
     }
 
     .form-designer-page {
-        display: flex !important;
-        flex-direction: column !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-        background: #fff !important;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #fff;
     }
 
     .form-designer-page__bar {
+        z-index: 2;
         display: flex;
-        flex-shrink: 0;
+        flex: 0 0 48px;
         align-items: center;
         justify-content: space-between;
-        gap: 16px;
+        gap: 12px;
         box-sizing: border-box;
         width: 100%;
-        height: 52px;
-        padding: 0 16px;
+        height: 48px;
+        padding: 0 12px;
         background: #fff;
         border-bottom: 1px solid #e7e7e7;
     }
@@ -392,7 +399,7 @@
     .form-designer-page__title {
         overflow: hidden;
         color: #1a1a1a;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 600;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -402,7 +409,7 @@
         display: flex;
         flex-shrink: 0;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
 
     .form-designer-page__canvas {
@@ -411,7 +418,7 @@
         width: 100%;
         min-height: 0;
         overflow: hidden;
-        background: #fff;
+        background: #f5f5f5;
     }
 
     .form-designer-page__code {
@@ -441,90 +448,82 @@
         background: #fafafa;
     }
 
-    /*
-     * 强制 FcDesigner 三列：左控件库 / 中画布 / 右属性
-     * 覆盖任何全局 .el-container / Layout 样式
-     */
+    /* ========== FcDesigner 三列：用 grid 钉死，不再依赖 el-container flex ========== */
     .form-designer-page ._fc-designer {
         position: relative !important;
+        box-sizing: border-box !important;
         width: 100% !important;
-        height: 100% !important;
+        /* 高度由组件 height 数字 prop 写到 inline style，禁止被 100% !important 覆盖 */
         min-height: 0 !important;
         overflow: hidden !important;
         background: #fff !important;
     }
 
-    .form-designer-page ._fc-designer.el-container,
-    .form-designer-page ._fc-designer.el-container.is-vertical {
-        display: flex !important;
-        flex-direction: row !important;
+    .form-designer-page ._fc-designer.el-container {
+        /* 外层只有一个 el-main，方向无所谓，保持默认即可 */
+        display: block !important;
     }
 
     .form-designer-page ._fc-designer > .el-main {
         position: absolute !important;
-        top: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        left: 0 !important;
+        inset: 0 !important;
+        box-sizing: border-box !important;
         padding: 0 !important;
         overflow: hidden !important;
     }
 
-    .form-designer-page ._fc-designer > .el-main > .el-container,
-    .form-designer-page ._fc-designer > .el-main > .el-container.is-vertical {
-        display: flex !important;
-        flex-direction: row !important;
+    /* 核心：左 | 中 | 右 */
+    .form-designer-page ._fc-designer > .el-main > .el-container {
+        display: grid !important;
+        grid-template-columns: 266px minmax(0, 1fr) 320px !important;
+        grid-template-rows: minmax(0, 1fr) !important;
         align-items: stretch !important;
+        box-sizing: border-box !important;
         width: 100% !important;
         height: 100% !important;
         min-height: 0 !important;
         overflow: hidden !important;
+        flex-direction: unset !important;
     }
 
-    .form-designer-page ._fc-l.el-aside,
-    .form-designer-page ._fc-l {
-        display: block !important;
-        flex: 0 0 266px !important;
+    .form-designer-page ._fc-l,
+    .form-designer-page ._fc-l.el-aside {
+        grid-column: 1 !important;
+        box-sizing: border-box !important;
         width: 266px !important;
         max-width: 266px !important;
         height: 100% !important;
+        min-height: 0 !important;
         overflow: hidden !important;
         border-right: 1px solid #ececec !important;
+        background: #fff !important;
     }
 
-    .form-designer-page ._fc-r.el-aside,
-    .form-designer-page ._fc-r {
-        display: block !important;
-        flex: 0 0 320px !important;
-        width: 320px !important;
-        max-width: 320px !important;
-        height: 100% !important;
-        overflow: hidden !important;
-        border-left: 1px solid #ececec !important;
-    }
-
-    .form-designer-page ._fc-m.el-container,
-    .form-designer-page ._fc-m.el-container.is-vertical,
-    .form-designer-page ._fc-m {
+    .form-designer-page ._fc-m,
+    .form-designer-page ._fc-m.el-container {
+        grid-column: 2 !important;
         display: flex !important;
-        flex: 1 1 auto !important;
         flex-direction: column !important;
+        box-sizing: border-box !important;
         width: auto !important;
         min-width: 0 !important;
         height: 100% !important;
-        overflow: hidden !important;
-    }
-
-    .form-designer-page ._fc-m > .el-header,
-    .form-designer-page ._fc-m-tools {
-        flex-shrink: 0 !important;
-    }
-
-    .form-designer-page ._fc-m > .el-main,
-    .form-designer-page ._fc-m-con {
-        flex: 1 1 auto !important;
         min-height: 0 !important;
-        overflow: auto !important;
+        overflow: hidden !important;
+        background: #f5f5f5 !important;
+    }
+
+    .form-designer-page ._fc-r,
+    .form-designer-page ._fc-r.el-aside {
+        grid-column: 3 !important;
+        box-sizing: border-box !important;
+        width: 320px !important;
+        max-width: 320px !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        border-left: 1px solid #ececec !important;
+        background: #fff !important;
     }
 
     .form-designer-page ._fc-l > .el-container,
@@ -532,5 +531,54 @@
         display: flex !important;
         flex-direction: column !important;
         height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .form-designer-page ._fc-l > .el-container > .el-main,
+    .form-designer-page ._fc-r > .el-container > .el-main {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow: auto !important;
+    }
+
+    .form-designer-page ._fc-m-tools,
+    .form-designer-page ._fc-m > .el-header {
+        flex: 0 0 40px !important;
+        height: 40px !important;
+        overflow: hidden !important;
+        background: #fff !important;
+    }
+
+    .form-designer-page ._fc-m > .el-main,
+    .form-designer-page ._fc-m-con {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow: auto !important;
+        background: #f5f5f5 !important;
+    }
+
+    /* 画布拖拽区：保证可见可投放 */
+    .form-designer-page ._fc-m-drag {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        min-height: calc(100% - 8px) !important;
+        height: auto !important;
+        padding: 8px !important;
+        background: #fff !important;
+        border: 1px dashed #c0c4cc !important;
+        border-radius: 4px !important;
+    }
+
+    .form-designer-page ._fd-draggable-drag,
+    .form-designer-page ._fd-draggable-drag.drag-holder {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        min-height: 360px !important;
+    }
+
+    .form-designer-page ._fd-draggable-drag.drag-holder:after {
+        font-size: 16px !important;
+        color: #909399 !important;
     }
 </style>
