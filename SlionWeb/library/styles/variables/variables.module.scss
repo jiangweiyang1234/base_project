@@ -4,13 +4,13 @@
 //颜色配置
 $base-color-white: #ffffff;
 $base-color-black: #515a6e;
-$base-color-primary: #1890ff;
-$base-color-success: #13ce66;
-$base-color-warning: #ffba00;
-$base-color-danger: #ff6700;
-$base-color-error: #ff4d4f;
-$base-color-grey: rgba(0, 0, 0, 0.65);
-$base-color-background: #f6f8f9;
+$base-color-primary: #0052d9;
+$base-color-success: #2ba471;
+$base-color-warning: #e37318;
+$base-color-danger: #d54941;
+$base-color-error: #d54941;
+$base-color-grey: rgba(0, 0, 0, 0.6);
+$base-color-background: #f3f3f3;
 
 $base-color-text-primary: #303133;
 $base-color-text-regular: #606266;
@@ -50,30 +50,30 @@ $base-font-size-bigger: 18px;
 $base-font-size-max: 22px;
 //最大宽度
 $base-main-width: 1279px;
-//圆角
-$base-border-radius: 5px;
+//圆角（贴近 TDesign）
+$base-border-radius: 6px;
 //边框颜色
 $base-border-color: #dcdfe6;
 //输入框高度
 $base-input-height: 32px;
 //默认margin
-$base-margin: 20px;
+$base-margin: 16px;
 //默认padding
 $base-padding: 20px;
 //默认阴影
-$base-box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+$base-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
 //横向top-bar、logo、一级菜单的高度
-$base-header-height: 60px;
+$base-header-height: 56px;
 //纵向、综合、分栏logo的高度
-$base-logo-height: 60px;
+$base-logo-height: 56px;
 //顶部nav-bar的高度
-$base-nav-height: 60px;
+$base-nav-height: 56px;
 //顶部标签页tabs-bar的高度
-$base-tabs-height: 50px;
+$base-tabs-height: 44px;
 //顶部标签页tabs-bar中每一个item的高度
-$base-tag-item-height: 34px;
+$base-tag-item-height: 32px;
 //菜单li标签的高度
-$base-menu-item-height: 50px;
+$base-menu-item-height: 44px;
 //app-main的高度
 $base-keep-alive-height: calc(100vh - #{$base-nav-height} - #{$base-tabs-height} - #{$base-padding} * 2 - 55px);
 //纵向左侧导航未折叠的宽度

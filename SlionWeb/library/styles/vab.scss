@@ -629,5 +629,44 @@ html {
       overflow: hidden;
       flex: none;
     }
+
+    /* TDesign-inspired shell polish */
+    .vab-app-main {
+      > section {
+        border-radius: $base-border-radius;
+        box-shadow: $base-box-shadow;
+        overflow: hidden;
+
+        > [class*='-container'] {
+          border-radius: $base-border-radius;
+        }
+      }
+    }
+
+    .vab-query-form {
+      margin-bottom: 12px;
+    }
+
+    .el-button--primary {
+      --el-button-bg-color: #{$base-color-primary};
+      --el-button-border-color: #{$base-color-primary};
+      --el-button-hover-bg-color: #{mix($base-color-white, $base-color-primary, 12%)};
+      --el-button-hover-border-color: #{mix($base-color-white, $base-color-primary, 12%)};
+    }
+
+    .el-pagination.is-background .el-pager li.is-active {
+      background-color: $base-color-primary !important;
+    }
+
+    .el-menu-item.is-active,
+    .el-sub-menu.is-active > .el-sub-menu__title {
+      font-weight: 600;
+    }
+
+    .vab-tabs-content {
+      .el-tabs__item {
+        border-radius: $base-border-radius $base-border-radius 0 0;
+      }
+    }
   }
 }

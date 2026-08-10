@@ -5,11 +5,11 @@ module.exports = {
     // 布局种类：保留综合布局 comprehensive（已精简主题切换入口）
     layout: 'comprehensive',
     // 主题名称：默认blue-black、blue-white、green-black、green-white、渐变ocean、red-white、red-black
-    themeName: 'green-white',
+    themeName: 'blue-white',
     // 菜单背景 none、vab-background
     background: 'none',
     // 菜单宽度，仅支持px，建议大小：266px、277px、288px，其余尺寸会影响美观
-    menuWidth: '200px',
+    menuWidth: '232px',
     // 分栏风格(仅针对分栏布局column时生效)：横向风格horizontal、纵向风格vertical、卡片风格card、箭头风格arrow
     columnStyle: 'card',
     // 是否固定头部固定
@@ -19,7 +19,7 @@ module.exports = {
     // 是否开启标签页
     showTabs: true,
     // 显示标签页时标签页样式：卡片风格card、灵动风格smart、圆滑风格smooth
-    tabsBarStyle: 'smart',
+    tabsBarStyle: 'card',
     // 是否标签页图标
     showTabsIcon: true,
     // 是否开启语言选择组件

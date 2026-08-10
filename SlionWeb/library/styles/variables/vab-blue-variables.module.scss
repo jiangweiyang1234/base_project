@@ -1,9 +1,9 @@
-$base-color-primary: #1890ff;
-$base-color-success: #13ce66;
-$base-color-warning: #ffba00;
-$base-color-danger: #ff4d4f;
-$base-color-error: #ff4d4f;
-$base-color-transition: #77e19d;
+$base-color-primary: #0052d9;
+$base-color-success: #2ba471;
+$base-color-warning: #e37318;
+$base-color-danger: #d54941;
+$base-color-error: #d54941;
+$base-color-transition: #266fe8;
 
 :export {
   vab-color-grey: $base-color-grey;
@@ -37,7 +37,7 @@ $base-color-transition: #77e19d;
   vab-color-info-lighter: mix($base-color-white,
       $base-color-text-secondary,
       90%);
-  vab-border-radius-base: 5px;
+  vab-border-radius-base: 6px;
   vab-color-transition: $base-color-transition;
   vab-left-menu-width: $base-left-menu-width;
 }
