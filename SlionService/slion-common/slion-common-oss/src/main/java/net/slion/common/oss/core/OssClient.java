@@ -194,7 +194,7 @@ public class OssClient {
                 .subscribeTimeout(Duration.ofSeconds(120))
                 .build();
 
-            // 使用 transferManager 进行上传
+            // 使用 transferManager 进行上传（先发起请求，再写入流）
             Upload upload = transferManager.upload(
                 x -> {
                     x.requestBody(body).putObjectRequest(
@@ -212,15 +212,31 @@ public class OssClient {
                 }
             );
 
-            // 将输入流写入请求体
-            body.writeInputStream(inputStream);
+            // AWS SDK：单线程下须先发起服务请求再 write；TransferManager 订阅是异步的，
+            // 在独立线程写入，避免 BlockingInputStreamAsyncRequestBody 120s 订阅超时
+            java.util.concurrent.CompletableFuture<Void> writeFuture =
+                java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        body.writeInputStream(inputStream);
+                    } catch (Exception ex) {
+                        throw new java.util.concurrent.CompletionException(ex);
+                    }
+                });
 
             // 等待文件上传操作完成
             CompletedUpload uploadResult = upload.completionFuture().join();
+            try {
+                writeFuture.join();
+            } catch (Exception writeEx) {
+                Throwable cause = writeEx.getCause() != null ? writeEx.getCause() : writeEx;
+                throw new OssException("上传文件失败，请检查配置信息:[" + cause.getMessage() + "]");
+            }
             String eTag = uploadResult.response().eTag();
 
             // 提取上传结果中的 ETag，并构建一个自定义的 UploadResult 对象
             return UploadResult.builder().url(getUrl() + StringUtils.SLASH + key).filename(key).eTag(eTag).build();
+        } catch (OssException e) {
+            throw e;
         } catch (Exception e) {
             throw new OssException("上传文件失败，请检查配置信息:[" + e.getMessage() + "]");
         }

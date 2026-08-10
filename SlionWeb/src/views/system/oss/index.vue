@@ -2,13 +2,9 @@
     <div class="oss-management-container auto-height-container">
         <vab-query-form>
             <vab-query-form-left-panel :span="12">
-                <el-upload
-                    :http-request="handleUpload"
-                    :show-file-list="false"
-                    action="#"
-                >
-                    <el-button :icon="Upload" type="primary">上传文件</el-button>
-                </el-upload>
+                <el-button :icon="Upload" type="primary" @click="openUpload">
+                    上传文件
+                </el-button>
                 <el-button
                     :icon="Delete"
                     style="margin-left: 8px"
@@ -42,18 +38,27 @@
             @selection-change="setSelectRows"
         >
             <el-table-column type="selection" width="48" />
-            <el-table-column label="文件名" prop="originalName" min-width="160" show-overflow-tooltip />
+            <el-table-column
+                label="文件名"
+                prop="originalName"
+                min-width="160"
+                show-overflow-tooltip
+            />
             <el-table-column label="后缀" prop="fileSuffix" width="80" />
             <el-table-column label="地址" min-width="200" show-overflow-tooltip>
                 <template #default="{ row }">
-                    <el-link :href="row.url" target="_blank" type="primary">{{ row.url }}</el-link>
+                    <el-link :href="row.url" target="_blank" type="primary">
+                        {{ row.url }}
+                    </el-link>
                 </template>
             </el-table-column>
             <el-table-column label="服务商" prop="service" width="100" />
             <el-table-column label="创建时间" prop="createTime" width="170" />
             <el-table-column align="center" label="操作" width="100" fixed="right">
                 <template #default="{ row }">
-                    <el-button text type="primary" @click="handleDelete(row)">删除</el-button>
+                    <el-button text type="primary" @click="handleDelete(row)">
+                        删除
+                    </el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -66,17 +71,22 @@
             @current-change="handleCurrentChange"
             @size-change="handleSizeChange"
         />
+
+        <oss-upload-dialog ref="uploadDialogRef" @success="fetchData" />
     </div>
 </template>
 <script>
     import { Delete, Search, Upload } from '@element-plus/icons-vue'
-    import { listOss, delOss, uploadOss } from '@/api/system/oss'
+    import { listOss, delOss } from '@/api/system/oss'
+    import OssUploadDialog from './components/OssUploadDialog.vue'
 
     export default defineComponent({
         name: 'OssManagement',
+        components: { OssUploadDialog },
         setup() {
             const $baseConfirm = inject('$baseConfirm')
             const $baseMessage = inject('$baseMessage')
+            const uploadDialogRef = ref(null)
             const state = reactive({
                 list: [],
                 listLoading: false,
@@ -85,7 +95,9 @@
                 selectRows: [],
                 queryForm: { pageNum: 1, pageSize: 10, fileName: undefined },
             })
-            const setSelectRows = (val) => { state.selectRows = val }
+            const setSelectRows = (val) => {
+                state.selectRows = val
+            }
             const fetchData = async () => {
                 state.listLoading = true
                 try {
@@ -96,12 +108,8 @@
                     state.listLoading = false
                 }
             }
-            const handleUpload = async (options) => {
-                const form = new FormData()
-                form.append('file', options.file)
-                const { msg } = await uploadOss(form)
-                $baseMessage(msg || '上传成功', 'success', 'vab-hey-message-success')
-                await fetchData()
+            const openUpload = () => {
+                uploadDialogRef.value?.show?.()
             }
             const handleDelete = (row) => {
                 if (row?.ossId) {
@@ -121,18 +129,29 @@
                     $baseMessage('未选中任何行', 'error', 'vab-hey-message-error')
                 }
             }
-            const queryData = () => { state.queryForm.pageNum = 1; fetchData() }
-            const handleSizeChange = (val) => { state.queryForm.pageSize = val; fetchData() }
-            const handleCurrentChange = (val) => { state.queryForm.pageNum = val; fetchData() }
+            const queryData = () => {
+                state.queryForm.pageNum = 1
+                fetchData()
+            }
+            const handleSizeChange = (val) => {
+                state.queryForm.pageSize = val
+                fetchData()
+            }
+            const handleCurrentChange = (val) => {
+                state.queryForm.pageNum = val
+                fetchData()
+            }
             onMounted(() => fetchData())
             return {
                 ...toRefs(state),
+                uploadDialogRef,
                 setSelectRows,
-                handleUpload,
+                openUpload,
                 handleDelete,
                 queryData,
                 handleSizeChange,
                 handleCurrentChange,
+                fetchData,
                 Delete,
                 Search,
                 Upload,

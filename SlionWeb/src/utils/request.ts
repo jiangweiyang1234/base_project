@@ -216,17 +216,27 @@ instance.interceptors.request.use(requestConf, (error) => {
 instance.interceptors.response.use(
     (response) => handleData(response),
     (error) => {
-        const { response } = error
+        const { response, code, message } = error || {}
+        if (loadingInstance) loadingInstance.close()
+        // 主动取消（AbortController）不弹全局错误
+        if (
+            code === 'ERR_CANCELED' ||
+            error?.name === 'CanceledError' ||
+            message === 'canceled'
+        ) {
+            return Promise.reject(error)
+        }
         if (response === undefined) {
-            if (loadingInstance) loadingInstance.close()
             gp.$baseMessage(
                 '连接后台接口失败，可能由以下原因造成：后端不支持跨域CORS、接口地址不存在、请求超时等，请联系管理员排查后端接口问题 ',
                 'error',
                 'vab-hey-message-error',
                 false
             )
-            return {}
-        } else return handleData(response)
+            // 必须 reject，否则调用方会当成成功（出现「上传成功」假提示）
+            return Promise.reject(error)
+        }
+        return handleData(response)
     }
 )
 
