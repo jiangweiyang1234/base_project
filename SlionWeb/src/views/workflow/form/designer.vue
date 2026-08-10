@@ -23,7 +23,11 @@
         </header>
 
         <div v-show="viewMode === 'design'" class="form-designer-page__canvas">
-            <fc-designer ref="designerRef" height="100%" />
+            <fc-designer
+                v-if="designerReady"
+                ref="designerRef"
+                :height="canvasHeight"
+            />
         </div>
 
         <div v-show="viewMode === 'code'" class="form-designer-page__code">
@@ -98,6 +102,8 @@
         hydrateDictOptions,
     } from '@/utils/formDesigner'
 
+    const BAR_HEIGHT = 52
+
     export default defineComponent({
         name: 'WorkflowFormDesigner',
         setup() {
@@ -107,6 +113,8 @@
             const $baseConfirm = inject('$baseConfirm')
 
             const designerRef = ref(null)
+            const designerReady = ref(false)
+            const canvasHeight = ref(`${Math.max(window.innerHeight - BAR_HEIGHT, 560)}px`)
             const saving = ref(false)
             const viewMode = ref('design')
             const codeTab = ref('json')
@@ -131,6 +139,10 @@
                 ext: '',
                 version: '',
             })
+
+            const syncCanvasHeight = () => {
+                canvasHeight.value = `${Math.max(window.innerHeight - BAR_HEIGHT, 560)}px`
+            }
 
             const getDesignerApi = () => designerRef.value
 
@@ -196,6 +208,7 @@
                 const id = route.query.id
                 if (!id) {
                     $baseMessage('缺少表单 id，请从列表进入设计', 'warning')
+                    designerReady.value = true
                     return
                 }
                 const { data } = await getForm(id)
@@ -209,6 +222,7 @@
                         rules = []
                     }
                 }
+                designerReady.value = true
                 await nextTick()
                 writeRules(rules)
                 injectDictPropConfig()
@@ -273,11 +287,21 @@
             })
 
             onMounted(() => {
+                document.body.classList.add('form-designer-active')
+                syncCanvasHeight()
+                window.addEventListener('resize', syncCanvasHeight)
                 loadForm()
+            })
+
+            onBeforeUnmount(() => {
+                document.body.classList.remove('form-designer-active')
+                window.removeEventListener('resize', syncCanvasHeight)
             })
 
             return {
                 designerRef,
+                designerReady,
+                canvasHeight,
                 saving,
                 viewMode,
                 codeTab,
@@ -297,18 +321,33 @@
     })
 </script>
 
+<style lang="scss">
+    /* 全屏设计器时隐藏后台壳层滚动，避免三列被挤压成上下结构 */
+    body.form-designer-active {
+        overflow: hidden !important;
+
+        .vab-app-main {
+            overflow: hidden !important;
+        }
+    }
+</style>
+
 <style lang="scss" scoped>
     .form-designer-page {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 120px);
-        min-height: 560px;
-        margin: -20px;
-        background: #f3f3f3;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        background: #fff;
     }
 
     .form-designer-page__bar {
         display: flex;
+        flex-shrink: 0;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
@@ -326,25 +365,27 @@
     }
 
     .form-designer-page__title {
+        overflow: hidden;
+        color: #1a1a1a;
         font-size: 15px;
         font-weight: 600;
-        color: #1a1a1a;
-        overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
     .form-designer-page__actions {
         display: flex;
+        flex-shrink: 0;
         align-items: center;
         gap: 10px;
-        flex-shrink: 0;
     }
 
     .form-designer-page__canvas {
         flex: 1;
+        width: 100%;
         min-height: 0;
         overflow: hidden;
+        background: #fff;
     }
 
     .form-designer-page__code {
@@ -378,7 +419,60 @@
         background: #fafafa;
     }
 
-    :deep(.fc-designer) {
+    /* 强制 FcDesigner 左(控件) / 中(画布) / 右(属性) 三列 */
+    :deep(._fc-designer) {
+        width: 100% !important;
         height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    :deep(._fc-designer > .el-main) {
+        position: absolute !important;
+        inset: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    :deep(._fc-designer > .el-main > .el-container) {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    :deep(._fc-l),
+    :deep(._fc-r) {
+        flex-shrink: 0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    :deep(._fc-l) {
+        width: 266px !important;
+        border-right: 1px solid #ececec;
+    }
+
+    :deep(._fc-r) {
+        width: 320px !important;
+        border-left: 1px solid #ececec;
+    }
+
+    :deep(._fc-m) {
+        display: flex !important;
+        flex: 1 1 auto !important;
+        flex-direction: column !important;
+        width: auto !important;
+        min-width: 0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    :deep(._fc-m-con) {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
     }
 </style>

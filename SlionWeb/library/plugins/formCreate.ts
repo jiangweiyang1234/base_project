@@ -25,7 +25,6 @@ export default {
                     if (typeof opt?.parse === 'function') {
                         return opt.parse(res)
                     }
-                    // 系统字典默认解析
                     if (
                         typeof action === 'string' &&
                         action.includes('/system/dict/data/type/')
