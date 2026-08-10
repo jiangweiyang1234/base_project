@@ -1248,11 +1248,11 @@ create table if not exists sys_oss_config
 
 
 
-insert into sys_oss_config values (1, '000000', 'minio',  'ruoyi',            'ruoyi123',        'ruoyi',             '', 'minio:9000',                      'https://slion.hxsoft.net/oss','Y', '',            '1', '0', '', 103, 1, now(), 1, now(), null);
+insert into sys_oss_config values (1, '000000', 'minio',  'ruoyi',            'ruoyi123',        'ruoyi',             '', 'minio:9000',                      'https://slion.hxsoft.net/oss','N', '',            '1', '0', '', 103, 1, now(), 1, now(), null);
 insert into sys_oss_config values (2, '000000', 'qiniu',  'XXXXXXXXXXXXXXX',  'XXXXXXXXXXXXXXX', 'ruoyi',             '', 's3-cn-north-1.qiniucs.com',           '','N', '',            '1', '1', '', 103, 1, now(), 1, now(), null);
 insert into sys_oss_config values (3, '000000', 'aliyun', 'XXXXXXXXXXXXXXX',  'XXXXXXXXXXXXXXX', 'ruoyi',             '', 'oss-cn-beijing.aliyuncs.com',         '','N', '',            '1', '1', '', 103, 1, now(), 1, now(), null);
 insert into sys_oss_config values (4, '000000', 'qcloud', 'XXXXXXXXXXXXXXX',  'XXXXXXXXXXXXXXX', 'ruoyi-1240000000',  '', 'cos.ap-beijing.myqcloud.com',         '','N', 'ap-beijing',  '1', '1', '', 103, 1, now(), 1, now(), null);
-insert into sys_oss_config values (5, '000000', 'image',  'ruoyi',            'ruoyi123',        'ruoyi',             'image', 'minio:9000',                 'https://slion.hxsoft.net/oss','Y', '',            '1', '1', '', 103, 1, now(), 1, now(), NULL);
+insert into sys_oss_config values (5, '000000', 'image',  'ruoyi',            'ruoyi123',        'ruoyi',             'image', 'minio:9000',                 'https://slion.hxsoft.net/oss','N', '',            '1', '1', '', 103, 1, now(), 1, now(), NULL);
 
 -- ----------------------------
 -- 系统授权表
