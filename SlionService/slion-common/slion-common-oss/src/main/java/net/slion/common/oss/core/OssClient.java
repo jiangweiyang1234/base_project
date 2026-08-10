@@ -184,9 +184,10 @@ public class OssClient {
      */
     public UploadResult upload(InputStream inputStream, String key, Long length, String contentType) {
         // 如果输入流不是 ByteArrayInputStream，则将其读取为字节数组再创建 ByteArrayInputStream
-        if (!(inputStream instanceof ByteArrayInputStream)) {
-            inputStream = new ByteArrayInputStream(IoUtil.readBytes(inputStream));
-        }
+        final InputStream stream =
+            inputStream instanceof ByteArrayInputStream
+                ? inputStream
+                : new ByteArrayInputStream(IoUtil.readBytes(inputStream));
         try {
             // 创建异步请求体（length如果为空会报错）
             BlockingInputStreamAsyncRequestBody body = BlockingInputStreamAsyncRequestBody.builder()
@@ -217,7 +218,7 @@ public class OssClient {
             java.util.concurrent.CompletableFuture<Void> writeFuture =
                 java.util.concurrent.CompletableFuture.runAsync(() -> {
                     try {
-                        body.writeInputStream(inputStream);
+                        body.writeInputStream(stream);
                     } catch (Exception ex) {
                         throw new java.util.concurrent.CompletionException(ex);
                     }
