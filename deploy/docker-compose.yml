@@ -50,13 +50,7 @@ services:
       - slion-service-net
 
   # 对象存储（系统管理 → 上传文件 / OSS）
-  # 镜像：docker.1ms.run/minio/minio:latest-cicd（内含 mc）
-  # 桶名以库表 sys_oss_config.bucket_name 为准；.env 的 MINIO_BUCKET 仅作建桶参考。
-  # 若改桶名后出现 NoSuchBucket，在 MinIO 内手动建桶：
-  #   docker exec slion-minio mc alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-  #   docker exec slion-minio mc mb -p local/slion
-  #   docker exec slion-minio mc anonymous set download local/slion
-  #   并 UPDATE sys_oss_config SET bucket_name='slion' WHERE config_key='minio'; 后重启 slion-admin
+  # 桶名默认 slion，须与 sys_oss_config.bucket_name / .env MINIO_BUCKET 一致
   minio:
     image: docker.1ms.run/minio/minio:latest-cicd
     container_name: slion-minio
@@ -74,6 +68,45 @@ services:
     networks:
       - slion-service-net
 
+  # 首次/空卷自动建桶（成功后 Exited 0 属正常，可 docker rm 掉容器，数据已在卷里）
+  minio-init:
+    image: docker.1ms.run/minio/minio:latest-cicd
+    container_name: slion-minio-init
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        USER="$${MINIO_ROOT_USER:-ruoyi}"
+        PASS="$${MINIO_ROOT_PASSWORD:-ruoyi123}"
+        BUCKET="$${MINIO_BUCKET:-slion}"
+        echo "[minio-init] waiting for minio API..."
+        i=0
+        until mc alias set local http://minio:9000 "$$USER" "$$PASS" >/dev/null 2>&1; do
+          i=$$((i + 1))
+          if [ "$$i" -gt 60 ]; then
+            echo "[minio-init] timeout waiting for minio"
+            exit 1
+          fi
+          echo "[minio-init] not ready, retry $$i/60..."
+          sleep 2
+        done
+        echo "[minio-init] ensure bucket: $$BUCKET"
+        mc mb -p "local/$$BUCKET" >/dev/null 2>&1 || true
+        mc anonymous set download "local/$$BUCKET" >/dev/null 2>&1 || true
+        mc ls "local/$$BUCKET" >/dev/null
+        echo "[minio-init] bucket ready: $$BUCKET"
+        exit 0
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-ruoyi}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ruoyi123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-slion}
+    networks:
+      - slion-service-net
+    restart: "no"
+
   slion-admin:
     build:
       context: ../SlionService
@@ -88,6 +121,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+      minio-init:
+        condition: service_completed_successfully
     environment:
       TZ: Asia/Shanghai
       SPRING_PROFILES_ACTIVE: prod
