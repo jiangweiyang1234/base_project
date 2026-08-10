@@ -51,7 +51,7 @@ services:
 
   # 对象存储（系统管理 → 上传文件 / OSS）
   minio:
-    image: docker.1ms.run/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: docker.1ms.run/minio/minio:latest-cicd
     container_name: slion-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
