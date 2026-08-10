@@ -376,6 +376,45 @@ INSERT INTO flow_spel VALUES (1, 'spelRuleComponent', 'selectDeptLeaderById', 'i
 INSERT INTO flow_spel VALUES (2, NULL, NULL, 'initiator', '${initiator}', '流程发起人', '0', '0', 103, 1, now(), 1, now());
 
 -- ----------------------------
+-- 流程表单表（Warm-Flow Form，供设计器关联）
+-- ----------------------------
+CREATE TABLE flow_form
+(
+    id           int8         NOT NULL,
+    form_code    varchar(40)  NOT NULL,
+    form_name    varchar(100) NOT NULL,
+    "version"    varchar(20)  NOT NULL,
+    is_publish   int2         NOT NULL DEFAULT 0,
+    form_type    int2         NULL     DEFAULT 0,
+    form_path    varchar(100) NULL,
+    form_content text         NULL,
+    ext          varchar(400) NULL,
+    create_time  timestamp    NULL,
+    create_by    varchar(64)  NULL     DEFAULT ''::character varying,
+    update_time  timestamp    NULL,
+    update_by    varchar(64)  NULL     DEFAULT ''::character varying,
+    del_flag     bpchar(1)    NULL     DEFAULT '0'::character varying,
+    tenant_id    varchar(40)  NULL,
+    CONSTRAINT flow_form_pkey PRIMARY KEY (id)
+);
+COMMENT ON TABLE flow_form IS '流程表单表';
+COMMENT ON COLUMN flow_form.id IS '主键id';
+COMMENT ON COLUMN flow_form.form_code IS '表单编码';
+COMMENT ON COLUMN flow_form.form_name IS '表单名称';
+COMMENT ON COLUMN flow_form."version" IS '表单版本';
+COMMENT ON COLUMN flow_form.is_publish IS '是否发布（0未发布 1已发布 9失效）';
+COMMENT ON COLUMN flow_form.form_type IS '表单类型（0内置表单存form_content 1外挂表单存form_path）';
+COMMENT ON COLUMN flow_form.form_path IS '表单路径';
+COMMENT ON COLUMN flow_form.form_content IS '表单内容';
+COMMENT ON COLUMN flow_form.ext IS '表单扩展';
+COMMENT ON COLUMN flow_form.create_time IS '创建时间';
+COMMENT ON COLUMN flow_form.create_by IS '创建人';
+COMMENT ON COLUMN flow_form.update_time IS '更新时间';
+COMMENT ON COLUMN flow_form.update_by IS '更新人';
+COMMENT ON COLUMN flow_form.del_flag IS '删除标志';
+COMMENT ON COLUMN flow_form.tenant_id IS '租户id';
+
+-- ----------------------------
 -- 流程实例业务扩展表
 -- ----------------------------
 CREATE TABLE flow_instance_biz_ext (
@@ -447,18 +486,19 @@ COMMENT ON COLUMN test_leave.update_by IS '更新者';
 COMMENT ON COLUMN test_leave.update_time IS '更新时间';
 
 INSERT INTO sys_menu VALUES ('11616', '工作流', '0', '6', 'workflow', '', '', '1', '0', 'M', '0', '0', '', 'workflow', 103, 1, now(), NULL, NULL, '');
-INSERT INTO sys_menu VALUES ('11618', '我的任务', '0', '7', 'task', '', '', '1', '0', 'M', '0', '0', '', 'my-task', 103, 1, now(), NULL, NULL, '');
+-- 我的任务挂在工作流下（二级），其子菜单为三级
+INSERT INTO sys_menu VALUES ('11618', '我的任务', '11616', '0', 'task', '', '', '1', '0', 'M', '0', '0', '', 'my-task', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11619', '我的待办', '11618', '2', 'taskWaiting', 'workflow/task/taskWaiting', '', '1', '1', 'C', '0', '0', '', 'waiting', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11632', '我的已办', '11618', '3', 'taskFinish', 'workflow/task/taskFinish', '', '1', '1', 'C', '0', '0', '', 'finish', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11633', '我的抄送', '11618', '4', 'taskCopyList', 'workflow/task/taskCopyList', '', '1', '1', 'C', '0', '0', '', 'my-copy', 103, 1, now(), NULL, NULL, '');
-INSERT INTO sys_menu VALUES ('11620', '流程定义', '11616', '3', 'processDefinition', 'workflow/processDefinition/index', '', '1', '1', 'C', '0', '0', 'workflow:definition:list', 'process-definition', 103, 1, now(), NULL, NULL, '');
+INSERT INTO sys_menu VALUES ('11620', '流程定义', '11616', '4', 'processDefinition', 'workflow/processDefinition/index', '', '1', '1', 'C', '0', '0', 'workflow:definition:list', 'process-definition', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11621', '流程实例', '11630', '1', 'processInstance', 'workflow/processInstance/index', '', '1', '1', 'C', '0', '0', 'workflow:instance:list', 'tree-table', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11622', '流程分类', '11616', '1', 'category', 'workflow/category/index', '', '1', '0', 'C', '0', '0', 'workflow:category:list', 'category', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11629', '我发起的', '11618', '1', 'myDocument', 'workflow/task/myDocument', '', '1', '1', 'C', '0', '0', 'workflow:instance:currentList', 'guide', 103, 1, now(), NULL, NULL, '');
-INSERT INTO sys_menu VALUES ('11630', '流程监控', '11616', '4', 'processMonitor', '', '', '1', '0', 'M', '0', '0', '', 'monitor', 103, 1, now(), NULL, NULL, '');
+INSERT INTO sys_menu VALUES ('11630', '流程监控', '11616', '5', 'processMonitor', '', '', '1', '0', 'M', '0', '0', '', 'monitor', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11631', '待办任务', '11630', '2', 'allTaskWaiting', 'workflow/task/allTaskWaiting', '', '1', '1', 'C', '0', '0', '', 'waiting', 103, 1, now(), NULL, NULL, '');
-INSERT INTO sys_menu VALUES ('11700', '流程设计', '11616', '5', 'design/index',   'workflow/processDefinition/design', '', '1', '1', 'C', '1', '0', 'workflow:leave:edit', '#', 103, 1, now(), NULL, NULL, '/workflow/processDefinition');
-INSERT INTO sys_menu VALUES ('11701', '请假申请', '11616', '6', 'leaveEdit/index', 'workflow/leave/leaveEdit', '', '1', '1', 'C', '1', '0', 'workflow:leave:edit', '#', 103, 1, now(), NULL, NULL, '');
+INSERT INTO sys_menu VALUES ('11700', '流程设计', '11616', '6', 'design/index',   'workflow/processDefinition/design', '', '1', '1', 'C', '1', '0', 'workflow:leave:edit', '#', 103, 1, now(), NULL, NULL, '/workflow/processDefinition');
+INSERT INTO sys_menu VALUES ('11701', '请假申请', '11616', '7', 'leaveEdit/index', 'workflow/leave/leaveEdit', '', '1', '1', 'C', '1', '0', 'workflow:leave:edit', '#', 103, 1, now(), NULL, NULL, '');
 
 INSERT INTO sys_menu VALUES ('11623', '流程分类查询', '11622', '1', '#', '', '', '1', '0', 'F', '0', '0', 'workflow:category:query', '#', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11624', '流程分类新增', '11622', '2', '#', '', '', '1', '0', 'F', '0', '0', 'workflow:category:add', '#', 103, 1, now(), NULL, NULL, '');
@@ -486,7 +526,14 @@ INSERT INTO sys_menu VALUES ('11650', '流程定义发布/取消发布', '11620'
 INSERT INTO sys_menu VALUES ('11651', '流程定义复制', '11620', '8', '#', '', '', '1', '0', 'F', '0', '0', 'workflow:definition:copy', '#', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11652', '流程定义激活/挂起', '11620', '9', '#', '', '', '1', '0', 'F', '0', '0', 'workflow:definition:active', '#', 103, 1, now(), NULL, NULL, '');
 
-INSERT INTO sys_menu VALUES ('11801', '流程表达式', '11616', 2, 'spel', 'workflow/spel/index', '', 1, 0, 'C', '0', '0', 'workflow:spel:list', 'input', 103, 1, now(), 1, now(), '流程达式定义菜单');
+INSERT INTO sys_menu VALUES ('11810', '流程表单', '11616', 2, 'form', 'workflow/form/index', '', 1, 0, 'C', '0', '0', 'workflow:form:list', 'file-list-3-line', 103, 1, now(), NULL, NULL, '流程表单管理');
+INSERT INTO sys_menu VALUES ('11811', '流程表单查询', '11810', 1, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:form:query', '#', 103, 1, now(), NULL, NULL, '');
+INSERT INTO sys_menu VALUES ('11812', '流程表单新增', '11810', 2, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:form:add', '#', 103, 1, now(), NULL, NULL, '');
+INSERT INTO sys_menu VALUES ('11813', '流程表单修改', '11810', 3, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:form:edit', '#', 103, 1, now(), NULL, NULL, '');
+INSERT INTO sys_menu VALUES ('11814', '流程表单删除', '11810', 4, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:form:remove', '#', 103, 1, now(), NULL, NULL, '');
+INSERT INTO sys_menu VALUES ('11815', '流程表单发布', '11810', 5, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:form:publish', '#', 103, 1, now(), NULL, NULL, '');
+
+INSERT INTO sys_menu VALUES ('11801', '流程表达式', '11616', 3, 'spel', 'workflow/spel/index', '', 1, 0, 'C', '0', '0', 'workflow:spel:list', 'input', 103, 1, now(), 1, now(), '流程达式定义菜单');
 INSERT INTO sys_menu VALUES ('11802', '流程spel表达式定义查询', '11801', 1, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:spel:query', '#', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11803', '流程spel表达式定义新增', '11801', 2, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:spel:add', '#', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11804', '流程spel表达式定义修改', '11801', 3, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:spel:edit', '#', 103, 1, now(), NULL, NULL, '');

@@ -13,6 +13,10 @@ UPDATE sys_menu SET component = 'workflow/task/allTaskWaiting' WHERE menu_id = 1
 UPDATE sys_menu SET component = 'workflow/task/myDocument' WHERE menu_id = 11629;
 UPDATE sys_menu SET component = 'workflow/task/taskCopyList' WHERE menu_id = 11633;
 UPDATE sys_menu SET component = 'workflow/spel/index' WHERE menu_id = 11801;
+UPDATE sys_menu SET component = 'workflow/form/index' WHERE menu_id = 11810;
 UPDATE sys_menu SET component = 'workflow/processDefinition/index' WHERE menu_id = 11620;
 UPDATE sys_menu SET component = 'workflow/processInstance/index' WHERE menu_id = 11621;
 UPDATE sys_menu SET component = 'workflow/category/index' WHERE menu_id = 11622;
+
+-- 我的任务归入工作流
+UPDATE sys_menu SET parent_id = 11616, order_num = 0 WHERE menu_id = 11618 AND parent_id = 0;

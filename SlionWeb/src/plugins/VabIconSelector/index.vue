@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-    import { getIconList } from '@/api/defaultIcon'
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const remixIcons: string[] = require('@/data/remixIcons')
 
     const emit = defineEmits(['handle-icon'])
     const state: any = reactive({
@@ -7,9 +8,7 @@
         layout: 'total, prev, next',
         total: 0,
         background: true,
-        height: 0,
-        selectRows: '',
-        queryIcon: [],
+        queryIcon: [] as string[],
         queryForm: {
             pageNo: 1,
             pageSize: 16,
@@ -17,11 +16,17 @@
         },
     })
 
-    const handleSizeChange: any = (val: string) => {
+    const filteredList = () => {
+        const title = (state.queryForm.title || '').trim()
+        if (!title) return remixIcons
+        return remixIcons.filter((item) => item.includes(title))
+    }
+
+    const handleSizeChange: any = (val: number) => {
         state.queryForm.pageSize = val
         fetchData()
     }
-    const handleCurrentChange: any = (val: string) => {
+    const handleCurrentChange: any = (val: number) => {
         state.queryForm.pageNo = val
         fetchData()
     }
@@ -29,12 +34,14 @@
         state.queryForm.pageNo = 1
         fetchData()
     }
-    const fetchData: any = async () => {
-        const {
-            data: { list, total },
-        } = await getIconList(state.queryForm)
-        state.queryIcon = list
-        state.total = total
+    const fetchData: any = () => {
+        const mockList = filteredList()
+        const { pageNo, pageSize } = state.queryForm
+        state.total = mockList.length
+        state.queryIcon = mockList.filter(
+            (_item, index) =>
+                index < pageSize * pageNo && index >= pageSize * (pageNo - 1)
+        )
     }
     const handleIcon: any = (item: any) => {
         state.icon = item
@@ -53,7 +60,11 @@
                 <vab-query-form-top-panel>
                     <el-form inline label-width="0" @submit.prevent>
                         <el-form-item label="">
-                            <el-input v-model="state.queryForm.title" />
+                            <el-input
+                                v-model="state.queryForm.title"
+                                clearable
+                                placeholder="搜索图标名"
+                            />
                         </el-form-item>
                         <el-form-item label-width="0">
                             <el-button

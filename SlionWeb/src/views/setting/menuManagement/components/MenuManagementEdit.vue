@@ -28,7 +28,30 @@
                 <el-input v-model="form.menuName" />
             </el-form-item>
             <el-form-item v-if="form.menuType !== 'F'" label="图标">
-                <el-input v-model="form.icon" placeholder="remix 图标名" />
+                <div class="menu-icon-field">
+                    <el-popover
+                        popper-class="icon-selector-popper menu-icon-selector-popper"
+                        trigger="click"
+                        :width="320"
+                    >
+                        <template #reference>
+                            <el-button class="menu-icon-trigger">
+                                <vab-icon v-if="form.icon" :icon="form.icon" />
+                                <span>{{ form.icon || '选择图标' }}</span>
+                                <vab-icon icon="arrow-down-s-line" />
+                            </el-button>
+                        </template>
+                        <vab-icon-selector @handle-icon="handleIcon" />
+                    </el-popover>
+                    <el-button
+                        v-if="form.icon"
+                        text
+                        type="danger"
+                        @click="form.icon = ''"
+                    >
+                        清除
+                    </el-button>
+                </div>
             </el-form-item>
             <el-form-item label="显示排序" prop="orderNum">
                 <el-input-number v-model="form.orderNum" :min="0" />
@@ -68,6 +91,7 @@
 <script>
     import { addMenu, listMenu, updateMenu } from '@/api/system/menu'
     import { handleTree } from '@/api/system/dept'
+    import VabIconSelector from '@/plugins/VabIconSelector'
 
     const emptyForm = () => ({
         menuId: undefined,
@@ -87,6 +111,7 @@
 
     export default defineComponent({
         name: 'MenuManagementEdit',
+        components: { VabIconSelector },
         emits: ['fetch-data'],
         setup(props, { emit }) {
             const $baseMessage = inject('$baseMessage')
@@ -109,6 +134,10 @@
                 title: '',
                 dialogFormVisible: false,
             })
+
+            const handleIcon = (icon) => {
+                state.form.icon = icon
+            }
 
             const loadMenuOptions = async () => {
                 const { data } = await listMenu()
@@ -153,7 +182,39 @@
                 showEdit,
                 close,
                 save,
+                handleIcon,
             }
         },
     })
 </script>
+
+<style lang="scss" scoped>
+    .menu-icon-field {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .menu-icon-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 100%;
+    }
+</style>
+
+<style lang="scss">
+    .menu-icon-selector-popper {
+        .vab-card {
+            &:hover {
+                border-color: var(--el-color-primary);
+                background-color: var(--el-color-primary-light-9);
+
+                i {
+                    color: var(--el-color-primary);
+                }
+            }
+        }
+    }
+</style>
