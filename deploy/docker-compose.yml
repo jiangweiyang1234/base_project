@@ -76,7 +76,7 @@ services:
 
   # 初始化默认桶 ruoyi（与 sys_oss_config 种子一致）
   minio-init:
-    image: docker.1ms.run/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    image: docker.1ms.run/minio/minio:latest-cicd
     container_name: slion-minio-init
     depends_on:
       minio:
