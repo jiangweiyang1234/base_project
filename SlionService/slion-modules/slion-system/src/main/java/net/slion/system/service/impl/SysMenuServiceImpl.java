@@ -123,10 +123,10 @@ public class SysMenuServiceImpl implements ISysMenuService {
             menus = baseMapper.selectMenuTreeAll();
         } else {
             LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
+            // 不按 visible 过滤：隐藏菜单仍需下发路由（侧栏由 hidden 控制）
             menus = baseMapper.selectList(
                     wrapper.in(SysMenu::getMenuType, SystemConstants.TYPE_DIR, SystemConstants.TYPE_MENU)
                             .eq(SysMenu::getStatus, SystemConstants.NORMAL)
-                            .eq(SysMenu::getVisible, SystemConstants.NORMAL)
                             .inSql(SysMenu::getMenuId, baseMapper.buildMenuByUserSql(userId))
                             .orderByAsc(SysMenu::getParentId)
                             .orderByAsc(SysMenu::getOrderNum));

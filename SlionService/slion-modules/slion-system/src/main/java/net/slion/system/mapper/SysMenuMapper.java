@@ -117,10 +117,10 @@ public interface SysMenuMapper extends BaseMapperPlus<SysMenu, SysMenuVo> {
      * @return 菜单列表
      */
     default List<SysMenu> selectMenuTreeAll() {
+        // 含 visible=1 的隐藏菜单：仍需注册路由（侧栏不展示，由 RouterVo.hidden 控制）
         LambdaQueryWrapper<SysMenu> lqw = new LambdaQueryWrapper<SysMenu>()
                 .in(SysMenu::getMenuType, SystemConstants.TYPE_DIR, SystemConstants.TYPE_MENU)
                 .eq(SysMenu::getStatus, SystemConstants.NORMAL)
-                .eq(SysMenu::getVisible, SystemConstants.NORMAL)
                 .orderByAsc(SysMenu::getParentId)
                 .orderByAsc(SysMenu::getOrderNum);
         return this.selectList(lqw);

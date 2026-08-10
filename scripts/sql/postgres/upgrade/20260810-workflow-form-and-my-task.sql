@@ -112,7 +112,7 @@ INSERT INTO sys_menu (
     is_frame, is_cache, menu_type, visible, status, perms, icon,
     create_dept, create_by, create_time, update_by, update_time, remark
 )
-SELECT 11816, '表单设计', 11616, 8, 'form/designer', 'workflow/form/designer', '',
+SELECT 11816, '表单设计', 11616, 8, 'formDesigner', 'workflow/form/designer', '',
        '1', '1', 'C', '1', '0', 'workflow:form:edit', '#',
        103, 1, now(), NULL, NULL, '/workflow/form'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 11816);
