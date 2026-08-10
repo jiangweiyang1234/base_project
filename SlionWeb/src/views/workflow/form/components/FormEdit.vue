@@ -19,21 +19,39 @@
                     placeholder="前端组件路径，如 workflow/leave/leaveEdit"
                 />
             </el-form-item>
-            <el-form-item v-else label="表单内容" prop="formContent">
-                <el-input
-                    v-model="form.formContent"
-                    type="textarea"
-                    :rows="10"
-                    placeholder="内置表单 JSON / HTML 内容，设计器可通过表单编码关联"
-                />
-            </el-form-item>
+            <template v-else>
+                <el-form-item label="表单内容">
+                    <el-alert
+                        :closable="false"
+                        show-icon
+                        type="info"
+                        title="请保存基础信息后，在列表点击「设计」使用可视化拖拽设计器编辑表单"
+                        style="width: 100%"
+                    />
+                </el-form-item>
+                <el-form-item v-if="form.id" label="高级 JSON">
+                    <el-input
+                        v-model="form.formContent"
+                        type="textarea"
+                        :rows="6"
+                        placeholder="可选：粘贴 form-create rule JSON（数组）；日常请用设计器"
+                    />
+                </el-form-item>
+            </template>
             <el-form-item label="扩展字段" prop="ext">
                 <el-input v-model="form.ext" placeholder="可选" />
             </el-form-item>
         </el-form>
         <template #footer>
             <el-button @click="close">取 消</el-button>
-            <el-button type="primary" @click="save">确 定</el-button>
+            <el-button
+                v-if="form.formType !== 1"
+                type="success"
+                @click="saveAndDesign"
+            >
+                {{ form.id ? '保存并设计' : '确定并设计' }}
+            </el-button>
+            <el-button type="primary" @click="save()">确 定</el-button>
         </template>
     </el-dialog>
 </template>
@@ -54,7 +72,7 @@
 
     export default defineComponent({
         name: 'WorkflowFormEdit',
-        emits: ['fetch-data'],
+        emits: ['fetch-data', 'design'],
         setup(props, { emit }) {
             const $baseMessage = inject('$baseMessage')
             const state = reactive({
@@ -66,6 +84,18 @@
                     ],
                     formName: [
                         { required: true, trigger: 'blur', message: '请输入表单名称' },
+                    ],
+                    formPath: [
+                        {
+                            validator: (_r, v, cb) => {
+                                if (state.form.formType === 1 && !v) {
+                                    cb(new Error('请输入表单路径'))
+                                } else {
+                                    cb()
+                                }
+                            },
+                            trigger: 'blur',
+                        },
                     ],
                 },
                 title: '',
@@ -87,21 +117,51 @@
                 state.form = emptyForm()
                 state.dialogFormVisible = false
             }
-            const save = () => {
+            const persist = async () => {
+                const payload = { ...state.form }
+                if (payload.formType !== 1) {
+                    payload.formType = 0
+                    payload.formPath = ''
+                }
+                if (payload.id) {
+                    const { msg } = await updateForm(payload)
+                    $baseMessage(msg || '修改成功', 'success', 'vab-hey-message-success')
+                    return payload
+                }
+                const { msg, data } = await addForm(payload)
+                $baseMessage(msg || '新增成功', 'success', 'vab-hey-message-success')
+                if (data?.id) {
+                    payload.id = data.id
+                }
+                return payload
+            }
+            const save = (openDesign = false) => {
                 state['formRef'].validate(async (valid) => {
                     if (!valid) return
-                    if (state.form.id) {
-                        const { msg } = await updateForm(state.form)
-                        $baseMessage(msg || '修改成功', 'success', 'vab-hey-message-success')
-                    } else {
-                        const { msg } = await addForm(state.form)
-                        $baseMessage(msg || '新增成功', 'success', 'vab-hey-message-success')
+                    try {
+                        const saved = await persist()
+                        emit('fetch-data')
+                        close()
+                        if (
+                            openDesign &&
+                            saved?.id &&
+                            saved.formType !== 1
+                        ) {
+                            emit('design', { id: saved.id })
+                        }
+                    } catch (e) {
+                        console.error(e)
                     }
-                    emit('fetch-data')
-                    close()
                 })
             }
-            return { ...toRefs(state), showEdit, close, save }
+            const saveAndDesign = () => save(true)
+            return {
+                ...toRefs(state),
+                showEdit,
+                close,
+                save,
+                saveAndDesign,
+            }
         },
     })
 </script>

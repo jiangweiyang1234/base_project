@@ -107,10 +107,20 @@ SELECT 11815, '流程表单发布', 11810, 5, '#', '', '',
        103, 1, now(), NULL, NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 11815);
 
+INSERT INTO sys_menu (
+    menu_id, menu_name, parent_id, order_num, path, component, query_param,
+    is_frame, is_cache, menu_type, visible, status, perms, icon,
+    create_dept, create_by, create_time, update_by, update_time, remark
+)
+SELECT 11816, '表单设计', 11616, 8, 'form/designer', 'workflow/form/designer', '',
+       '1', '1', 'C', '1', '0', 'workflow:form:edit', '#',
+       103, 1, now(), NULL, NULL, '/workflow/form'
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 11816);
+
 -- 超级管理员角色授权
 INSERT INTO sys_role_menu (role_id, menu_id)
 SELECT 1, m.menu_id
-FROM (VALUES (11810), (11811), (11812), (11813), (11814), (11815)) AS m(menu_id)
+FROM (VALUES (11810), (11811), (11812), (11813), (11814), (11815), (11816)) AS m(menu_id)
 WHERE NOT EXISTS (
     SELECT 1 FROM sys_role_menu rm WHERE rm.role_id = 1 AND rm.menu_id = m.menu_id
 );

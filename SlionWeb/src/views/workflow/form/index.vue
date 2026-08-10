@@ -90,10 +90,18 @@
                 show-overflow-tooltip
                 width="160"
             />
-            <el-table-column align="center" fixed="right" label="操作" width="280">
+            <el-table-column align="center" fixed="right" label="操作" width="340">
                 <template #default="{ row }">
                     <el-button text type="primary" @click="handleEdit(row)">
                         编辑
+                    </el-button>
+                    <el-button
+                        v-if="row.formType !== 1"
+                        text
+                        type="primary"
+                        @click="handleDesign(row)"
+                    >
+                        设计
                     </el-button>
                     <el-button
                         v-if="row.isPublish !== 1"
@@ -132,7 +140,7 @@
             @current-change="handleCurrentChange"
             @size-change="handleSizeChange"
         />
-        <edit ref="editRef" @fetch-data="fetchData" />
+        <edit ref="editRef" @fetch-data="fetchData" @design="onDesigned" />
     </div>
 </template>
 
@@ -152,6 +160,7 @@
             Edit: defineAsyncComponent(() => import('./components/FormEdit.vue')),
         },
         setup() {
+            const router = useRouter()
             const $baseConfirm = inject('$baseConfirm')
             const $baseMessage = inject('$baseMessage')
             const state = reactive({
@@ -174,6 +183,18 @@
             }
             const handleEdit = (row) => {
                 state['editRef']?.showEdit(row)
+            }
+            const handleDesign = (row) => {
+                if (!row?.id) return
+                router.push({
+                    path: '/workflow/form/designer',
+                    query: { id: String(row.id) },
+                })
+            }
+            const onDesigned = (payload) => {
+                if (payload?.id) {
+                    handleDesign(payload)
+                }
             }
             const handlePublish = (row) => {
                 $baseConfirm('确认发布该表单吗？', null, async () => {
@@ -245,6 +266,8 @@
                 ...toRefs(state),
                 setSelectRows,
                 handleEdit,
+                handleDesign,
+                onDesigned,
                 handlePublish,
                 handleUnPublish,
                 handleCopy,

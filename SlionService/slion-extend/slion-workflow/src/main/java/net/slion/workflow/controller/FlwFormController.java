@@ -67,8 +67,8 @@ public class FlwFormController extends BaseController {
     @Log(title = "流程表单", businessType = BusinessType.INSERT)
     @RepeatSubmit
     @PostMapping
-    public R<Void> add(@RequestBody FlowForm form) {
-        return toAjax(flwFormService.insertForm(form));
+    public R<FlowForm> add(@RequestBody FlowForm form) {
+        return flwFormService.insertForm(form) ? R.ok(form) : R.fail();
     }
 
     /**

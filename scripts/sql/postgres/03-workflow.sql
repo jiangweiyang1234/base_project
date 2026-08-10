@@ -532,6 +532,7 @@ INSERT INTO sys_menu VALUES ('11812', '流程表单新增', '11810', 2, '#', '',
 INSERT INTO sys_menu VALUES ('11813', '流程表单修改', '11810', 3, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:form:edit', '#', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11814', '流程表单删除', '11810', 4, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:form:remove', '#', 103, 1, now(), NULL, NULL, '');
 INSERT INTO sys_menu VALUES ('11815', '流程表单发布', '11810', 5, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:form:publish', '#', 103, 1, now(), NULL, NULL, '');
+INSERT INTO sys_menu VALUES ('11816', '表单设计', '11616', 8, 'form/designer', 'workflow/form/designer', '', 1, 1, 'C', '1', '0', 'workflow:form:edit', '#', 103, 1, now(), NULL, NULL, '/workflow/form');
 
 INSERT INTO sys_menu VALUES ('11801', '流程表达式', '11616', 3, 'spel', 'workflow/spel/index', '', 1, 0, 'C', '0', '0', 'workflow:spel:list', 'input', 103, 1, now(), 1, now(), '流程达式定义菜单');
 INSERT INTO sys_menu VALUES ('11802', '流程spel表达式定义查询', '11801', 1, '#', '', NULL, 1, 0, 'F', '0', '0', 'workflow:spel:query', '#', 103, 1, now(), NULL, NULL, '');

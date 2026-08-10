@@ -14,6 +14,7 @@ UPDATE sys_menu SET component = 'workflow/task/myDocument' WHERE menu_id = 11629
 UPDATE sys_menu SET component = 'workflow/task/taskCopyList' WHERE menu_id = 11633;
 UPDATE sys_menu SET component = 'workflow/spel/index' WHERE menu_id = 11801;
 UPDATE sys_menu SET component = 'workflow/form/index' WHERE menu_id = 11810;
+UPDATE sys_menu SET component = 'workflow/form/designer' WHERE menu_id = 11816;
 UPDATE sys_menu SET component = 'workflow/processDefinition/index' WHERE menu_id = 11620;
 UPDATE sys_menu SET component = 'workflow/processInstance/index' WHERE menu_id = 11621;
 UPDATE sys_menu SET component = 'workflow/category/index' WHERE menu_id = 11622;
