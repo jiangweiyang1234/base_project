@@ -462,7 +462,12 @@
         font-size: 16px;
         font-weight: 600;
         letter-spacing: 0.08em;
-        background: linear-gradient(135deg, #<PRIVATE_ADDRESS> 0%, var(--login-brand) 55%, #<PRIVATE_ADDRESS> 100%);
+        background: linear-gradient(
+            135deg,
+            rgb(38, 111, 232) 0%,
+            var(--login-brand) 55%,
+            var(--login-brand-deep) 100%
+        );
         border: 0;
         border-radius: 8px;
         box-shadow: 0 10px 28px rgba(0, 82, 217, 0.38);
