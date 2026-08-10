@@ -11,6 +11,9 @@
                 </span>
             </div>
             <div class="form-designer-page__actions">
+                <span class="form-designer-page__hint">
+                    同行布局：左侧「布局组件」→「栅格布局」
+                </span>
                 <el-radio-group v-model="viewMode" size="small">
                     <el-radio-button value="design">设计</el-radio-button>
                     <el-radio-button value="code">代码</el-radio-button>
@@ -33,6 +36,14 @@
         </div>
 
         <div v-show="viewMode === 'code'" class="form-designer-page__code">
+            <el-alert
+                :closable="false"
+                show-icon
+                style="margin-bottom: 12px"
+                title="同一行排版：1）字段自带「标签」可在右侧表单配置里把「标签位置」设为 left/right；2）多个控件并排：左侧「布局组件」→「栅格布局」，拖入各列。预览请用右上角按钮（设计器内弹窗）。"
+
+                type="info"
+            />
             <el-tabs v-model="codeTab">
                 <el-tab-pane label="JSON" name="json">
                     <el-input
@@ -43,27 +54,12 @@
                     />
                 </el-tab-pane>
                 <el-tab-pane label="HTML" name="html">
-                    <el-alert
-                        :closable="false"
-                        show-icon
-                        style="margin-bottom: 12px"
-                        title="HTML 由 form-create 根据 JSON 动态渲染；下方为结构提示与实时预览"
-                        type="info"
-                    />
                     <el-input
                         v-model="codeHtml"
-                        class="form-designer-page__editor form-designer-page__editor--sm"
+                        class="form-designer-page__editor"
                         readonly
                         type="textarea"
                     />
-                    <div class="form-designer-page__preview-box">
-                        <form-create
-                            v-if="previewRule.length"
-                            :option="previewOption"
-                            :rule="previewRule"
-                        />
-                        <el-empty v-else description="暂无字段，请先在设计模式添加控件" />
-                    </div>
                 </el-tab-pane>
                 <el-tab-pane label="Vue" name="vue">
                     <el-input
@@ -75,21 +71,6 @@
                 </el-tab-pane>
             </el-tabs>
         </div>
-
-        <el-dialog
-            v-model="previewVisible"
-            append-to-body
-            destroy-on-close
-            title="表单预览"
-            width="720px"
-        >
-            <form-create
-                v-if="previewRule.length"
-                :option="previewOption"
-                :rule="previewRule"
-            />
-            <el-empty v-else description="暂无字段" />
-        </el-dialog>
     </div>
 </template>
 
@@ -102,7 +83,6 @@
         buildHtmlPreviewHint,
         buildVueSfcSnippet,
         attachDictFetch,
-        hydrateDictOptions,
     } from '@/utils/formDesigner'
 
     let requestSeq = 0
@@ -125,13 +105,6 @@
             const codeJson = ref('[]')
             const codeHtml = ref('')
             const codeVue = ref('')
-            const previewVisible = ref(false)
-            const previewRule = ref([])
-            const previewOption = reactive({
-                form: { labelWidth: '100px' },
-                submitBtn: false,
-                resetBtn: false,
-            })
             const meta = reactive({
                 id: undefined,
                 formCode: '',
@@ -203,16 +176,21 @@
             }
 
             const onFrameLoad = () => {
-                // ready 由宿主 postMessage 上报；这里仅兜底 ping
                 postToHost('ping')
             }
 
-            const syncCodePanels = async (rules) => {
+            const syncCodePanels = (rules) => {
                 const list = Array.isArray(rules) ? rules : pendingRules.value || []
-                codeJson.value = JSON.stringify(list, null, 2)
-                codeHtml.value = buildHtmlPreviewHint(list)
-                codeVue.value = buildVueSfcSnippet(list, meta.formCode || 'BizForm')
-                previewRule.value = await hydrateDictOptions(list)
+                // 深拷贝成纯 JSON，避免把 Proxy 写进 textarea 引发异常
+                let plain = []
+                try {
+                    plain = JSON.parse(JSON.stringify(list))
+                } catch {
+                    plain = []
+                }
+                codeJson.value = JSON.stringify(plain, null, 2)
+                codeHtml.value = buildHtmlPreviewHint(plain)
+                codeVue.value = buildVueSfcSnippet(plain, meta.formCode || 'BizForm')
             }
 
             const applyJsonToDesigner = () => {
@@ -250,7 +228,7 @@
                         }
                     }
                     syncRulesToHost(rules)
-                    await syncCodePanels(rules)
+                    syncCodePanels(rules)
                 } catch (e) {
                     console.error(e)
                 }
@@ -284,7 +262,7 @@
                     meta.formContent = formContent
                     meta.formType = 0
                     syncRulesToHost(rules)
-                    await syncCodePanels(rules)
+                    syncCodePanels(rules)
                     $baseMessage(msg || '保存成功', 'success', 'vab-hey-message-success')
                 } catch (e) {
                     console.error(e)
@@ -293,14 +271,22 @@
                 }
             }
 
-            const handlePreview = async () => {
+            /** 预览走 iframe 内 FcDesigner.openPreview，避免父页二次渲染卡死 */
+            const handlePreview = () => {
                 if (viewMode.value === 'code' && codeTab.value === 'json') {
                     applyJsonToDesigner()
-                } else {
-                    const rules = await requestRulesFromHost()
-                    await syncCodePanels(rules)
                 }
-                previewVisible.value = true
+                if (!hostReady.value) {
+                    $baseMessage('设计器尚未就绪，请稍后再试', 'warning')
+                    return
+                }
+                // 切回设计视图，确保 iframe 内预览弹层可见
+                if (viewMode.value !== 'design') {
+                    viewMode.value = 'design'
+                    nextTick(() => postToHost('preview'))
+                    return
+                }
+                postToHost('preview')
             }
 
             const goBack = () => {
@@ -312,14 +298,14 @@
             watch(viewMode, async (mode) => {
                 if (mode === 'code') {
                     const rules = await requestRulesFromHost()
-                    await syncCodePanels(rules)
+                    syncCodePanels(rules)
                 }
             })
 
             watch(codeTab, async (tab) => {
                 if (tab === 'html' || tab === 'vue') {
                     const rules = await requestRulesFromHost()
-                    await syncCodePanels(rules)
+                    syncCodePanels(rules)
                 }
             })
 
@@ -345,9 +331,6 @@
                 codeJson,
                 codeHtml,
                 codeVue,
-                previewVisible,
-                previewRule,
-                previewOption,
                 meta,
                 goBack,
                 handleSave,
@@ -424,6 +407,18 @@
         gap: 8px;
     }
 
+    .form-designer-page__hint {
+        color: #8c8c8c;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 1100px) {
+        .form-designer-page__hint {
+            display: none;
+        }
+    }
+
     .form-designer-page__canvas {
         flex: 1 1 auto;
         width: 100%;
@@ -457,13 +452,5 @@
 
     .form-designer-page__editor--sm textarea {
         min-height: 120px;
-    }
-
-    .form-designer-page__preview-box {
-        margin-top: 12px;
-        padding: 16px;
-        border: 1px dashed #d0d5dd;
-        border-radius: 8px;
-        background: #fafafa;
     }
 </style>

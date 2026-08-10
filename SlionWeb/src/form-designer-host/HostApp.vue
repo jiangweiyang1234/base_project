@@ -20,6 +20,22 @@
         showDevice: true,
         showFormConfig: true,
         showConfig: true,
+        // 默认表单：标签与控件同一行；支持栅格列宽
+        formOptions: {
+            form: {
+                labelPosition: 'right',
+                labelWidth: '100px',
+                size: 'default',
+                hideRequiredAsterisk: false,
+                // inline 为整表横排；多字段同行优先用「布局组件 → 栅格布局」
+                inline: false,
+            },
+            row: {
+                gutter: 16,
+            },
+            submitBtn: false,
+            resetBtn: false,
+        },
     })
 
     const syncHeight = () => {
@@ -28,11 +44,17 @@
 
     const getApi = () => designerRef.value
 
+    /** 始终经 getJson 再 parse，避免把设计器内部响应式对象传给父页导致卡死 */
     const readRules = () => {
         const api = getApi()
-        if (!api?.getRule) return []
+        if (!api) return []
         try {
-            return api.getRule() || []
+            if (typeof api.getJson === 'function') {
+                const json = api.getJson()
+                const parsed = typeof json === 'string' ? JSON.parse(json || '[]') : json
+                return Array.isArray(parsed) ? parsed : []
+            }
+            return api.getRule?.() || []
         } catch {
             return []
         }
@@ -42,6 +64,15 @@
         const api = getApi()
         if (!api?.setRule) return
         api.setRule(Array.isArray(rules) ? rules : [])
+    }
+
+    const openPreview = () => {
+        const api = getApi()
+        if (typeof api?.openPreview === 'function') {
+            api.openPreview()
+            return
+        }
+        post('preview-fallback', { rules: readRules() })
     }
 
     const post = (type, payload = {}) => {
@@ -58,6 +89,9 @@
             case 'getRule':
                 post('rule', { requestId: data.requestId, rules: readRules() })
                 break
+            case 'preview':
+                openPreview()
+                break
             case 'ping':
                 post('pong')
                 break
@@ -72,6 +106,12 @@
         window.addEventListener('message', onMessage)
         ready.value = true
         await nextTick()
+        // 再设一次 option，确保默认标签同行生效
+        try {
+            getApi()?.setOption?.(config.formOptions)
+        } catch {
+            /* ignore */
+        }
         post('ready')
     })
 
