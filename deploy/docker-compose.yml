@@ -51,7 +51,7 @@ services:
 
   # 对象存储（系统管理 → 上传文件 / OSS）
   minio:
-    image: docker.1ms.run/minio/minio:latest-cicd
+    image: docker.1ms.run/minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: slion-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -64,32 +64,41 @@ services:
       - "${SLION_MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - slion-minio-data:/data
-    healthcheck:
-      # 官方镜像未必带 curl/mc，用进程探活；桶初始化由 minio-init 完成
-      test: ["CMD", "minio", "--version"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
     networks:
       - slion-service-net
 
   # 初始化默认桶 ruoyi（与 sys_oss_config 种子一致）
+  # 一次性任务：成功后状态为 Exited(0)，属正常，不是失败
   minio-init:
-    image: docker.1ms.run/minio/minio:latest-cicd
+    image: docker.1ms.run/minio/mc:RELEASE.2025-04-16T18-13-26Z
     container_name: slion-minio-init
     depends_on:
       minio:
         condition: service_started
-    entrypoint: >
-      /bin/sh -c "
-      set -e;
-      echo waiting for minio...;
-      until mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-ruoyi} $${MINIO_ROOT_PASSWORD:-ruoyi123}; do sleep 2; done;
-      mc mb -p local/$${MINIO_BUCKET:-ruoyi} || true;
-      mc anonymous set download local/$${MINIO_BUCKET:-ruoyi} || true;
-      echo minio bucket ready;
-      "
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        USER="$${MINIO_ROOT_USER:-ruoyi}"
+        PASS="$${MINIO_ROOT_PASSWORD:-ruoyi123}"
+        BUCKET="$${MINIO_BUCKET:-ruoyi}"
+        echo "[minio-init] waiting for minio API..."
+        i=0
+        until mc alias set local http://minio:9000 "$$USER" "$$PASS" >/dev/null 2>&1; do
+          i=$$((i + 1))
+          if [ "$$i" -gt 60 ]; then
+            echo "[minio-init] timeout waiting for minio"
+            exit 1
+          fi
+          echo "[minio-init] not ready, retry $$i/60..."
+          sleep 2
+        done
+        echo "[minio-init] alias ok, ensure bucket..."
+        mc mb -p "local/$$BUCKET" >/dev/null 2>&1 || true
+        mc anonymous set download "local/$$BUCKET" >/dev/null 2>&1 || true
+        mc ls "local/$$BUCKET" >/dev/null
+        echo "[minio-init] bucket ready: $$BUCKET"
+        exit 0
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-ruoyi}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ruoyi123}
